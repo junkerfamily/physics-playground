@@ -56,7 +56,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--cold); outl
 .notes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; color: var(--muted); font-size: .92rem; border-top: 1px solid var(--line); padding-top: 16px; }
 .notes h2 { font: 700 1.05rem var(--display); color: var(--ink); margin: 0 0 4px; }
 .notes p { margin: 0; }
-.demos { display: flex; flex-wrap: wrap; gap: 6px; }
+.demos { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.brand { font: 700 1rem var(--display); margin-right: 8px; }
 .demos a { font: 500 .875rem var(--body); color: var(--muted); text-decoration: none; border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; }
 .demos a:hover { color: var(--ink); border-color: var(--muted); }
 .demos a[aria-current=page] { color: var(--ink); background: var(--panel); border-color: var(--muted); }
@@ -72,8 +73,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--cold); outl
 <body>
 <main class="wrap">
   <nav class="demos" aria-label="Physics demos">
+    <span class="brand">Physics Playground</span>
     <a href="./" aria-current="page">The Cold Blast</a>
     <a href="hydraulics/">The Oil Lever</a>
+    <a href="siphon/">Siphon Demo</a>
   </nav>
   <header>
     <h1>Squeeze a gas. Then let it go.</h1>
