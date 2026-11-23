@@ -294,7 +294,7 @@ input[type=range] { width: 100%; accent-color: var(--oil); margin: 4px 0; }
   function draw() {
     const r = cv.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2), bw = Math.round(r.width * dpr), bh = Math.round(r.height * dpr);
     if (bw && (cv.width !== bw || cv.height !== bh)) { cv.width = bw; cv.height = bh; }
-    const s = cv.width / W, fs = Math.max(13, 11.5 / (r.width / W || 1));
+    const s = cv.width / W, fs = Math.max(13, 11.5 / (r.width / W || 1)), compact = r.width < 560;
     c.setTransform(s, 0, 0, s, 0, 0);
     c.fillStyle = "#0b1316"; c.fillRect(0, 0, W, H);
     c.font = `500 ${fs}px "IBM Plex Mono", monospace`;
@@ -353,13 +353,13 @@ input[type=range] { width: 100%; accent-color: var(--oil); margin: 4px 0; }
     const inletOpen = !pumpHeld ? py > PUMP.up : dir < 0 && py > PUMP.up;
     const outletOpen = pumpHeld && !lowerHeld && dir > 0 && !stalled && !topped;
     valve(PUMP.cx, 425, inletOpen);
-    valve(330, PIPE_Y, outletOpen, "one-way valve", 330, PIPE_Y - 19);
-    valve(RAM.cx, 425, lowerHeld, "release", RAM.cx + 62, 430);
+    valve(330, PIPE_Y, outletOpen, compact ? "" : "one-way valve", 330, PIPE_Y - 19);
+    valve(RAM.cx, 425, lowerHeld, compact ? "" : "release", RAM.cx + 62, 430);
 
     c.fillStyle = "#a9bab8"; c.textAlign = "left";
-    c.fillText("PUMP", PUMP.cx + 24, PIPE_Y - 22);
-    c.fillText("OIL TANK", TANK.l + 10, TANK.t - 8);
-    c.fillText("LIFTING PISTON", rl + rw + 12, RAM.top + 12);
+    c.fillText("PUMP", PUMP.cx + 24, compact ? 340 : PIPE_Y - 22);
+    c.fillText(compact ? "OIL" : "OIL TANK", TANK.l + 10, TANK.t - 8);
+    if (!compact) c.fillText("LIFTING PISTON", rl + rw + 12, RAM.top + 12);
     if (!pumpHeld && !lift) { c.fillStyle = "#e8b84e"; c.fillText("press and hold", PUMP.cx - 62, py - 134); }
   }
 
