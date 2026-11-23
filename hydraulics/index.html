@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Oil Lever</title>
+<meta name="description" content="Pump a cutaway hydraulic jack and see how oil pressure turns a small push into a large lifting force.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: a workshop test bench. The machine fills the page, with its controls and gauges mounted beneath it. */
+:root {
+  color-scheme: dark;
+  --bench: #10191d;
+  --plate: #1a272c;
+  --line: #34474e;
+  --ink: #eff4f2;
+  --muted: #a9bab8;
+  --oil: #e8b84e;
+  --press: #ff6a4d;
+  --display: "Space Grotesk", system-ui, sans-serif;
+  --body: "Inter", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bench); color: var(--ink); font-family: var(--body); line-height: 1.55; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 28px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+h1 { font: 700 clamp(1.8rem, 4.5vw, 3rem)/1.05 var(--display); margin: 0; text-wrap: balance; letter-spacing: -.02em; }
+.lede { margin: 8px 0 0; color: var(--muted); max-width: 65ch; }
+#stage { display: block; width: 100%; aspect-ratio: 1000 / 560; max-width: 100%; background: #0b1316; border: 1px solid var(--line); border-radius: 6px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.actions { display: grid; grid-template-columns: 2fr 1fr auto; gap: 8px; }
+.act { font: 600 1rem var(--body); color: var(--ink); background: var(--plate); border: 1px solid var(--line); border-radius: 6px; padding: 13px 12px; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; min-width: 0; }
+#pump { background: #5a4216; border-color: var(--oil); }
+#pump.on { background: var(--oil); color: #1b1508; }
+#lower.on { background: #2d5660; border-color: var(--muted); }
+#reset { font-weight: 500; font-size: .875rem; background: transparent; touch-action: auto; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--oil); outline-offset: 2px; }
+.controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.ctl { display: grid; gap: 4px; min-width: 0; }
+.ctl label, .ctl .k { display: flex; justify-content: space-between; gap: 8px; font-size: .84rem; color: var(--muted); }
+.ctl b { font: 500 .9rem var(--mono); color: var(--ink); white-space: nowrap; }
+input[type=range] { width: 100%; accent-color: var(--oil); margin: 4px 0; }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.seg button { font: 500 .9rem var(--mono); color: var(--ink); background: var(--plate); border: 1px solid var(--line); border-radius: 4px; padding: 5px; cursor: pointer; }
+.seg button[aria-pressed=true] { background: var(--oil); border-color: var(--oil); color: #1b1508; }
+#say { margin: 0; min-height: 3.2em; max-width: 78ch; font-size: 1.02rem; }
+.read { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
+.read div { min-width: 0; }
+.read .k { display: block; font-size: .78rem; color: var(--muted); }
+.read output { font: 500 clamp(1.1rem, 2.6vw, 1.6rem) var(--mono); font-variant-numeric: tabular-nums; }
+.notes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; color: var(--muted); font-size: .92rem; border-top: 1px solid var(--line); padding-top: 16px; }
+.notes h2 { font: 700 1.05rem var(--display); color: var(--ink); margin: 0 0 4px; }
+.notes p { margin: 0; }
+.demos { display: flex; flex-wrap: wrap; gap: 6px; }
+.demos a { font: 500 .875rem var(--body); color: var(--muted); text-decoration: none; border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; }
+.demos a:hover { color: var(--ink); border-color: var(--muted); }
+.demos a[aria-current=page] { color: var(--ink); background: var(--plate); border-color: var(--muted); }
+.demos a:focus-visible { outline: 2px solid var(--oil); outline-offset: 2px; }
+@media (max-width: 720px) {
+  .controls, .notes { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .read { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .actions { grid-template-columns: 1fr 1fr; }
+  #reset { grid-column: 1 / -1; }
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <nav class="demos" aria-label="Physics demos">
+    <a href="../">The Cold Blast</a>
+    <a href="./" aria-current="page">The Oil Lever</a>
+  </nav>
+  <header>
+    <h1>Push a little. Lift a lot.</h1>
+    <p class="lede">This is a hydraulic jack cut open. Each dot is a parcel of oil. Oil barely compresses, so pressure from your small push reaches every surface at once, including a much larger piston under the load.</p>
+  </header>
+
+  <canvas id="stage" width="1000" height="560" aria-label="Cutaway of a hydraulic jack with a small pump piston on the left, an oil tank below, and a large lifting piston carrying a weight on the right"></canvas>
+
+  <div class="actions">
+    <button class="act" id="pump" type="button">Hold to pump</button>
+    <button class="act" id="lower" type="button">Hold to lower</button>
+    <button class="act" id="reset" type="button">Start over</button>
+  </div>
+
+  <p id="say" aria-live="polite"></p>
+
+  <div class="controls">
+    <div class="ctl">
+      <label for="force">Your push <b id="forceV"></b></label>
+      <input id="force" type="range" min="50" max="800" step="10" value="400">
+    </div>
+    <div class="ctl">
+      <label for="mass">Load <b id="massV"></b></label>
+      <input id="mass" type="range" min="100" max="1200" step="25" value="300">
+    </div>
+    <div class="ctl">
+      <span class="k">Lifting piston area <b id="ratioV"></b></span>
+      <div class="seg" role="group" aria-label="Lifting piston area">
+        <button type="button" data-r="4" aria-pressed="false">4×</button>
+        <button type="button" data-r="9" aria-pressed="true">9×</button>
+        <button type="button" data-r="16" aria-pressed="false">16×</button>
+      </div>
+    </div>
+  </div>
+
+  <section class="read" aria-label="Live readings">
+    <div><span class="k">Oil pressure</span><output id="rP">0 bar</output></div>
+    <div><span class="k">Force on the load</span><output id="rF">0 N</output></div>
+    <div><span class="k">Push needed</span><output id="rN">0 N</output></div>
+    <div><span class="k">Hand moved / load rose</span><output id="rD">0 / 0 cm</output></div>
+  </section>
+
+  <section class="notes">
+    <div>
+      <h2>Why force multiplies</h2>
+      <p>Pressure is force spread over area. The same pressure pressing on 9 times the area makes 9 times the force.</p>
+    </div>
+    <div>
+      <h2>What you pay for it</h2>
+      <p>The oil you push out has to fill a much wider cylinder, so the load rises only 1/9 as far as your hand moves. Force goes up, distance goes down, and the work stays equal.</p>
+    </div>
+    <div>
+      <h2>Why it holds still</h2>
+      <p>A one-way valve lets oil into the big cylinder and blocks it from coming back. Between strokes, the trapped oil holds the load. This model ignores friction and leaks.</p>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const W = 1000, H = 560, VP = 81, G = 9.81, A1 = 5;
+  const TANK = { l: 40, r: 960, t: 450, b: 535 };
+  const PUMP = { cx: 190, w: 24, top: 250, floor: 400, up: 270, down: 380 };
+  const RAM = { cx: 640, top: 260, floor: 400, rest: 370, max: 100 };
+  const PIPE_Y = 391;
+  const cv = document.getElementById("stage"), c = cv.getContext("2d");
+  const $ = id => document.getElementById(id);
+
+  let ratio = 9, py, dir, lift, travel, raised, pumpHeld = false, lowerHeld = false, stalled, topped;
+  let pumpP, ramP, shownPump, shownRam, rooms, moving, inbound, lastKey = "", last;
+
+  const force = () => +$("force").value, mass = () => +$("mass").value;
+  const ramW = () => PUMP.w * ratio, ramY = () => RAM.rest - lift;
+  const needed = () => mass() * G / ratio;
+  const box = room => room === "tank" ? { l: TANK.l, w: TANK.r - TANK.l, b: TANK.b }
+    : room === "pump" ? { l: PUMP.cx - PUMP.w / 2, w: PUMP.w, b: PUMP.floor }
+    : { l: RAM.cx - ramW() / 2, w: ramW(), b: RAM.floor };
+
+  function slot(room, i) {
+    const b = box(room), cols = Math.max(1, Math.floor(b.w / 9)), rowH = VP * cols / b.w;
+    return [b.l + (i % cols + .5) * b.w / cols, b.b - (Math.floor(i / cols) + .5) * rowH];
+  }
+
+  function reset() {
+    py = PUMP.up; dir = 1; lift = 0; travel = 0; raised = 0; stalled = false; topped = false;
+    pumpP = ramP = shownPump = shownRam = 0; moving = []; inbound = { tank: 0, pump: 0, ram: 0 };
+    rooms = { tank: [], pump: [], ram: [] };
+    const fill = (room, n) => { for (let i = 0; i < n; i++) { const [x, y] = slot(room, i); rooms[room].push({ x, y, route: null, to: null }); } };
+    fill("tank", 720);
+    fill("pump", Math.round((PUMP.floor - py) * PUMP.w / VP));
+    fill("ram", Math.round((RAM.floor - ramY()) * ramW() / VP));
+    lastKey = "";
+  }
+
+  function send(p, to, route) { p.to = to; p.route = route; inbound[to]++; moving.push(p); }
+
+  function takeFromTank(x) {
+    const t = rooms.tank, cols = Math.floor((TANK.r - TANK.l) / 9);
+    let best = t.length - 1, d = Infinity;
+    for (let i = t.length - 1; i >= Math.max(0, t.length - cols); i--) {
+      const e = Math.abs(t[i].x - x);
+      if (e < d) { d = e; best = i; }
+    }
+    const p = t[best]; t[best] = t[t.length - 1]; t.pop();
+    return p;
+  }
+
+  function moveOil(dt) {
+    const pumpTarget = Math.round((PUMP.floor - py) * PUMP.w / VP);
+    const ramTarget = Math.round((RAM.floor - ramY()) * ramW() / VP);
+    while (rooms.pump.length + inbound.pump < pumpTarget && rooms.tank.length)
+      send(takeFromTank(PUMP.cx), "pump", [[PUMP.cx, TANK.t], [PUMP.cx, PUMP.floor - 3]]);
+    while (rooms.pump.length > pumpTarget)
+      send(rooms.pump.shift(), "ram", [[PUMP.cx, PIPE_Y], [RAM.cx - ramW() / 2 + 3, PIPE_Y]]);
+    while (rooms.ram.length + inbound.ram > ramTarget && rooms.ram.length)
+      send(rooms.ram.shift(), "tank", [[RAM.cx, RAM.floor], [RAM.cx, TANK.t + 3]]);
+
+    const k = 1 - Math.exp(-dt * 16);
+    for (const room of ["tank", "pump", "ram"]) rooms[room].forEach((p, i) => {
+      const [x, y] = slot(room, i); p.x += (x - p.x) * k; p.y += (y - p.y) * k;
+    });
+    const step = 620 * dt;
+    moving = moving.filter(p => {
+      let left = step;
+      while (left > 0 && p.route.length) {
+        const [x, y] = p.route[0], dx = x - p.x, dy = y - p.y, d = Math.hypot(dx, dy);
+        if (d <= left) { p.x = x; p.y = y; left -= d; p.route.shift(); }
+        else { p.x += dx / d * left; p.y += dy / d * left; left = 0; }
+      }
+      if (p.route.length) return true;
+      inbound[p.to]--; rooms[p.to].push(p); p.route = null;
+      return false;
+    });
+  }
+
+  function update(dt) {
+    const pin = pumpHeld ? force() / A1 : 0, preq = mass() * G / (A1 * ratio);
+    stalled = false; topped = false;
+
+    if (lowerHeld) {
+      lift = Math.max(0, lift - 65 * dt);
+      py = Math.max(PUMP.up, py - 200 * dt);
+      if (py === PUMP.up) dir = 1;
+      if (lift === 0) { travel = 0; raised = 0; }
+    } else if (pumpHeld) {
+      if (dir > 0) {
+        if (lift >= RAM.max) topped = true;
+        else if (pin >= preq) {
+          const d = Math.min(130 * dt, PUMP.down - py, (RAM.max - lift) * ratio);
+          py += d; lift = Math.min(RAM.max, lift + d / ratio); travel += d; raised += d / ratio;
+          if (py >= PUMP.down - .01) dir = -1;
+        } else stalled = true;
+      } else {
+        py = Math.max(PUMP.up, py - 210 * dt);
+        if (py === PUMP.up) dir = 1;
+      }
+    } else {
+      if (py > PUMP.up) dir = -1;
+      py = Math.max(PUMP.up, py - 210 * dt);
+      if (py === PUMP.up) dir = 1;
+    }
+
+    const pressing = pumpHeld && !lowerHeld && dir > 0;
+    pumpP = pressing ? Math.min(pin, topped ? pin : preq) : 0;
+    ramP = lift > 0 ? preq : pressing ? Math.min(pin, preq) : 0;
+    const e = 1 - Math.exp(-dt * 24);
+    shownPump += (pumpP - shownPump) * e; shownRam += (ramP - shownRam) * e;
+    moveOil(dt);
+  }
+
+  function say() {
+    const f = force(), n = Math.round(needed()), m = mass(), key = [lowerHeld, pumpHeld, stalled, topped, lift > 0, f, m, ratio].join();
+    if (key === lastKey) return;
+    lastKey = key;
+    let t;
+    if (lowerHeld) t = lift > 0 ? "The release valve is open. The load's weight pushes the oil back into the tank." : "The load is resting on the bottom stop. Oil pressure has dropped to zero.";
+    else if (topped) t = "The lifting piston is fully extended. Hold Lower to bring it back down.";
+    else if (stalled) t = `You are pushing ${f} N, but this load needs ${n} N. The pressure can't rise high enough. Push harder, lighten the load, or pick a larger lifting piston.`;
+    else if (pumpHeld) t = `Your ${f} N push is enough. A ${m} kg load needs only ${n} N here because the lifting piston has ${ratio} times the area.`;
+    else if (lift > 0) t = "You let go, and the load stays up. The one-way valve has trapped the oil beneath it.";
+    else t = `Press and hold the pump to lift ${m} kg. You need at least ${n} N of push.`;
+    $("say").textContent = t;
+  }
+
+  function readings() {
+    const bar = shownRam / 10, out = shownRam * A1 * ratio;
+    $("rP").textContent = `${Math.round(Math.max(shownRam, shownPump) / 10)} bar`;
+    $("rF").textContent = `${Math.round(out).toLocaleString("en-US")} N`;
+    $("rN").textContent = `${Math.round(needed())} N`;
+    $("rD").textContent = `${(travel / 10).toFixed(1)} / ${(raised / 10).toFixed(1)} cm`;
+    $("forceV").textContent = `${force()} N`;
+    $("massV").textContent = `${mass()} kg`;
+    $("ratioV").textContent = `${(A1 * ratio)} cm²`;
+    return bar;
+  }
+
+  function oilColor(p) {
+    const bar = p / 10, f = Math.min(1, Math.log1p(bar) / Math.log1p(150));
+    const a = [232, 184, 78], b = [255, 72, 92];
+    return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * f)).join(",")})`;
+  }
+
+  function dots(list, col) {
+    c.fillStyle = col; c.beginPath();
+    for (const p of list) { c.moveTo(p.x + 3.1, p.y); c.arc(p.x, p.y, 3.1, 0, 6.2832); }
+    c.fill();
+  }
+
+  function arrow(x, y, dx, dy, col, w = 2) {
+    const l = Math.hypot(dx, dy); if (l < 2) return;
+    const ux = dx / l, uy = dy / l, h = Math.min(7 + w, l * .6), ex = x + dx, ey = y + dy;
+    c.strokeStyle = c.fillStyle = col; c.lineWidth = w;
+    c.beginPath(); c.moveTo(x, y); c.lineTo(ex - ux * h * .7, ey - uy * h * .7); c.stroke();
+    c.beginPath(); c.moveTo(ex, ey); c.lineTo(ex - ux * h - uy * h * .55, ey - uy * h + ux * h * .55); c.lineTo(ex - ux * h + uy * h * .55, ey - uy * h - ux * h * .55); c.fill();
+  }
+
+  function valve(x, y, open, label, labelX, labelY) {
+    c.fillStyle = open ? "#7ee0d0" : "#65787d"; c.beginPath(); c.arc(x, y, 8, 0, 6.2832); c.fill();
+    c.strokeStyle = "#0b1316"; c.lineWidth = 2; c.stroke();
+    if (label) { c.fillStyle = "#a9bab8"; c.textAlign = "center"; c.fillText(label, labelX, labelY); }
+  }
+
+  function draw() {
+    const r = cv.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2), bw = Math.round(r.width * dpr), bh = Math.round(r.height * dpr);
+    if (bw && (cv.width !== bw || cv.height !== bh)) { cv.width = bw; cv.height = bh; }
+    const s = cv.width / W, fs = Math.max(13, 11.5 / (r.width / W || 1));
+    c.setTransform(s, 0, 0, s, 0, 0);
+    c.fillStyle = "#0b1316"; c.fillRect(0, 0, W, H);
+    c.font = `500 ${fs}px "IBM Plex Mono", monospace`;
+
+    const rw = ramW(), rl = RAM.cx - rw / 2, ry = ramY(), steel = "#7b9096", dark = "#1c2a2f";
+    c.fillStyle = dark;
+    c.fillRect(TANK.l, TANK.t, TANK.r - TANK.l, TANK.b - TANK.t);
+    c.fillRect(PUMP.cx - PUMP.w / 2, py, PUMP.w, PUMP.floor - py);
+    c.fillRect(rl, ry, rw, RAM.floor - ry);
+    c.fillRect(PUMP.cx - 6, PUMP.floor, 12, TANK.t - PUMP.floor);
+    c.fillRect(RAM.cx - 6, RAM.floor, 12, TANK.t - RAM.floor);
+    c.fillRect(PUMP.cx + PUMP.w / 2, PIPE_Y - 6, rl - PUMP.cx - PUMP.w / 2, 12);
+
+    dots(rooms.tank, "#c99d40");
+    dots(rooms.pump, oilColor(shownPump));
+    dots(rooms.ram, oilColor(shownRam));
+    dots(moving, "#ffe08a");
+
+    c.strokeStyle = steel; c.lineWidth = 4; c.lineJoin = "miter";
+    c.beginPath();
+    c.moveTo(TANK.l, TANK.t); c.lineTo(PUMP.cx - 8, TANK.t); c.moveTo(PUMP.cx + 8, TANK.t); c.lineTo(RAM.cx - 8, TANK.t); c.moveTo(RAM.cx + 8, TANK.t); c.lineTo(TANK.r, TANK.t); c.lineTo(TANK.r, TANK.b); c.lineTo(TANK.l, TANK.b); c.lineTo(TANK.l, TANK.t);
+    c.moveTo(PUMP.cx - 14, PUMP.top); c.lineTo(PUMP.cx - 14, PUMP.floor + 2); c.lineTo(PUMP.cx - 8, PUMP.floor + 2); c.lineTo(PUMP.cx - 8, TANK.t);
+    c.moveTo(PUMP.cx + 14, PUMP.top); c.lineTo(PUMP.cx + 14, PIPE_Y - 8); c.lineTo(rl - 2, PIPE_Y - 8);
+    c.moveTo(PUMP.cx + 8, TANK.t); c.lineTo(PUMP.cx + 8, PUMP.floor + 2); c.lineTo(PUMP.cx + 14, PUMP.floor + 2); c.lineTo(PUMP.cx + 14, PIPE_Y + 8); c.lineTo(rl - 2, PIPE_Y + 8);
+    c.moveTo(rl - 2, RAM.top); c.lineTo(rl - 2, PIPE_Y - 8); c.moveTo(rl - 2, PIPE_Y + 8); c.lineTo(rl - 2, RAM.floor + 2); c.lineTo(RAM.cx - 8, RAM.floor + 2); c.lineTo(RAM.cx - 8, TANK.t);
+    c.moveTo(rl + rw + 2, RAM.top); c.lineTo(rl + rw + 2, RAM.floor + 2); c.lineTo(RAM.cx + 8, RAM.floor + 2); c.lineTo(RAM.cx + 8, TANK.t);
+    c.stroke();
+
+    /* Pump piston and handle */
+    c.fillStyle = "#aebfc3"; c.fillRect(PUMP.cx - 12, py - 8, 24, 8);
+    c.fillStyle = steel; c.fillRect(PUMP.cx - 4, py - 112, 8, 104);
+    c.fillStyle = pumpHeld ? "#e8b84e" : "#aebfc3"; c.fillRect(PUMP.cx - 62, py - 124, 124, 14);
+
+    /* Ram piston, rod, platform, and load */
+    c.fillStyle = "#aebfc3"; c.fillRect(rl, ry - 12, rw, 12);
+    c.fillStyle = steel; c.fillRect(RAM.cx - 15, ry - 112, 30, 100);
+    const pw = Math.max(130, Math.min(320, rw)), platform = ry - 112;
+    c.fillStyle = "#aebfc3"; c.fillRect(RAM.cx - pw / 2, platform, pw, 8);
+    const bw2 = Math.min(pw - 10, 62 + Math.sqrt(mass()) * 5), bh2 = 28 + Math.sqrt(mass()) * .85, by = platform - bh2;
+    c.fillStyle = "#42616b"; c.fillRect(RAM.cx - bw2 / 2, by, bw2, bh2);
+    c.fillStyle = "#eff4f2"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(`${mass()} kg`, RAM.cx, by + bh2 / 2);
+    c.textBaseline = "alphabetic";
+
+    /* Pressure acts outward on every wall */
+    const len = p => Math.min(22, 4 + p * .1);
+    const pa = "rgba(255,106,77,.92)";
+    if (shownRam > 3) {
+      const L = len(shownRam), n = Math.max(3, Math.floor(rw / 42));
+      for (let i = 0; i < n; i++) arrow(rl + (i + .5) * rw / n, ry + 7, 0, -Math.min(L, 17), pa);
+      for (let i = 0; i < n; i++) { const x = rl + (i + .5) * rw / n; if (Math.abs(x - RAM.cx) > 16) arrow(x, RAM.floor - 7, 0, Math.min(L, 6), pa); }
+      for (const side of [-1, 1]) arrow(RAM.cx + side * (rw / 2 - 10), (ry + RAM.floor) / 2, side * Math.min(L, 8), 0, pa);
+    }
+    if (shownPump > 3) arrow(PUMP.cx, py - 150, 0, 28, "#ffd27a", 4);
+
+    /* Valves */
+    const inletOpen = !pumpHeld ? py > PUMP.up : dir < 0 && py > PUMP.up;
+    const outletOpen = pumpHeld && !lowerHeld && dir > 0 && !stalled && !topped;
+    valve(PUMP.cx, 425, inletOpen);
+    valve(330, PIPE_Y, outletOpen, "one-way valve", 330, PIPE_Y - 19);
+    valve(RAM.cx, 425, lowerHeld, "release", RAM.cx + 62, 430);
+
+    c.fillStyle = "#a9bab8"; c.textAlign = "left";
+    c.fillText("PUMP", PUMP.cx + 24, PIPE_Y - 22);
+    c.fillText("OIL TANK", TANK.l + 10, TANK.t - 8);
+    c.fillText("LIFTING PISTON", rl + rw + 12, RAM.top + 12);
+    if (!pumpHeld && !lift) { c.fillStyle = "#e8b84e"; c.fillText("press and hold", PUMP.cx - 62, py - 134); }
+  }
+
+  function frame(now) {
+    const dt = Math.min(.04, (now - (last ?? now)) / 1000); last = now;
+    update(dt); say(); readings(); draw();
+    requestAnimationFrame(frame);
+  }
+
+  function hold(btn, set) {
+    const on = () => { set(true); btn.classList.add("on"); };
+    const off = () => { set(false); btn.classList.remove("on"); };
+    btn.addEventListener("pointerdown", e => { e.preventDefault(); btn.setPointerCapture?.(e.pointerId); on(); });
+    btn.addEventListener("pointerup", off); btn.addEventListener("pointercancel", off); btn.addEventListener("lostpointercapture", off);
+    btn.addEventListener("keydown", e => { if ((e.key === " " || e.key === "Enter")) { e.preventDefault(); on(); } });
+    btn.addEventListener("keyup", e => { if (e.key === " " || e.key === "Enter") off(); });
+    btn.addEventListener("blur", off);
+    btn.addEventListener("contextmenu", e => e.preventDefault());
+  }
+  hold($("pump"), v => { pumpHeld = v; });
+  hold($("lower"), v => { lowerHeld = v; });
+
+  const onPump = e => { const b = cv.getBoundingClientRect(), x = (e.clientX - b.left) / b.width * W, y = (e.clientY - b.top) / b.height * H; return x < 330 && y < 405; };
+  cv.addEventListener("pointerdown", e => { if (onPump(e)) { cv.setPointerCapture(e.pointerId); pumpHeld = true; $("pump").classList.add("on"); } });
+  const canvasOff = () => { if (pumpHeld) { pumpHeld = false; $("pump").classList.remove("on"); } };
+  cv.addEventListener("pointerup", canvasOff); cv.addEventListener("pointercancel", canvasOff);
+  cv.addEventListener("pointermove", e => { cv.style.cursor = onPump(e) ? "pointer" : "default"; });
+
+  document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => {
+    ratio = +b.dataset.r;
+    document.querySelectorAll(".seg button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    reset();
+  }));
+  $("reset").addEventListener("click", reset);
+
+  reset();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
