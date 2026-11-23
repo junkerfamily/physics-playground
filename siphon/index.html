@@ -255,7 +255,7 @@ input[type=range] { width: 100%; accent-color: var(--water); margin: 4px 0; }
     c.textAlign = "right"; c.textBaseline = "middle";
     for (let z = 0; z <= 16; z += compact ? 4 : 2) {
       c.strokeStyle = "#1a2e45"; c.lineWidth = 1; c.beginPath(); c.moveTo(62, Y(z)); c.lineTo(W - 12, Y(z)); c.stroke();
-      c.fillStyle = "#a5b8cb"; c.fillText(`${z} m`, 56, Y(z));
+      c.fillStyle = "#a5b8cb"; c.fillText(compact ? `${z}` : `${z} m`, 56, Y(z));
     }
     c.textBaseline = "alphabetic";
 
