@@ -24,7 +24,7 @@
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--void); color: var(--ink); font-family: var(--body); line-height: 1.55; }
-.wrap { max-width: 1120px; margin: 0 auto; padding-block: 28px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 18px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 28px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
 h1 { font: 700 clamp(1.8rem, 4.5vw, 3rem)/1.05 var(--display); margin: 0; text-wrap: balance; letter-spacing: -.02em; }
 .lede { margin: 8px 0 0; color: var(--muted); max-width: 65ch; font-size: 1rem; }
 #stage { display: block; width: 100%; aspect-ratio: 1000 / 520; max-width: 100%; background: #080c19; border: 1px solid var(--line); border-radius: 6px; touch-action: none; }
