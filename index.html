@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Cold Blast</title>
+<meta name="description" content="Squeeze oxygen until it heats up, then blast it into a vacuum and watch it turn cold.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: one instrument. The chamber is the page, with the controls and readouts bolted beneath it. */
+:root {
+  color-scheme: dark;
+  --void: #0b1020;
+  --panel: #141b31;
+  --line: #2a3454;
+  --ink: #eef1f8;
+  --muted: #a3adc8;
+  --hot: #ff7a3d;
+  --cold: #4cc9ff;
+  --display: "Space Grotesk", system-ui, sans-serif;
+  --body: "Inter", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--void); color: var(--ink); font-family: var(--body); line-height: 1.55; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 28px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 18px; }
+h1 { font: 700 clamp(1.8rem, 4.5vw, 3rem)/1.05 var(--display); margin: 0; text-wrap: balance; letter-spacing: -.02em; }
+.lede { margin: 8px 0 0; color: var(--muted); max-width: 65ch; font-size: 1rem; }
+#stage { display: block; width: 100%; aspect-ratio: 1000 / 520; max-width: 100%; background: #080c19; border: 1px solid var(--line); border-radius: 6px; touch-action: none; }
+.legend { display: grid; gap: 4px; font: 400 .75rem var(--mono); color: var(--muted); }
+#scale { height: 10px; border-radius: 2px; }
+.ticks { position: relative; height: 1.3em; }
+.ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.ticks span:first-child { transform: none; }
+.ticks span:last-child { transform: translateX(-100%); }
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.step { font: 600 .95rem var(--body); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px; text-align: left; cursor: pointer; display: grid; gap: 1px; min-width: 0; }
+.step small { font: 400 .75rem var(--mono); color: var(--muted); }
+.step:hover:not(:disabled) { border-color: var(--muted); }
+.step:disabled { opacity: .42; cursor: default; }
+.step.next { background: #26335c; border-color: var(--cold); }
+.step.done { border-color: #46557f; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--cold); outline-offset: 2px; }
+.bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 18px; }
+.tools { display: flex; align-items: center; gap: 16px; }
+.tools label { display: flex; gap: 6px; align-items: center; color: var(--muted); font-size: .875rem; cursor: pointer; }
+#reset { font: 500 .875rem var(--body); color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 7px 14px; cursor: pointer; }
+#say { margin: 0; min-height: 3.2em; max-width: 72ch; font-size: 1.02rem; flex: 1 1 320px; }
+.read { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
+.read div { min-width: 0; }
+.read label, .read .k { display: block; font-size: .78rem; color: var(--muted); }
+.read output { font: 500 clamp(1.15rem, 3vw, 1.7rem) var(--mono); font-variant-numeric: tabular-nums; }
+#flowTrack { height: 8px; background: var(--line); border-radius: 2px; overflow: hidden; margin-top: 4px; }
+#flowFill { height: 100%; width: 0; background: var(--cold); }
+.notes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; color: var(--muted); font-size: .92rem; border-top: 1px solid var(--line); padding-top: 16px; }
+.notes h2 { font: 700 1.05rem var(--display); color: var(--ink); margin: 0 0 4px; }
+.notes p { margin: 0; }
+@media (max-width: 640px) {
+  .step { padding: 9px; font-size: .82rem; }
+  .step small { font-size: .66rem; }
+  .notes { grid-template-columns: minmax(0, 1fr); }
+  .read { gap: 10px; }
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <h1>Squeeze a gas. Then let it go.</h1>
+    <p class="lede">Each dumbbell is one oxygen molecule, with billions of billions left out so you can watch them. Color shows how violently a molecule jostles against its neighbors.</p>
+  </header>
+
+  <canvas id="stage" width="1000" height="520" aria-label="Simulation of oxygen molecules in a tank with a piston on the left and a valve opening into a large vacuum on the right"></canvas>
+
+  <div class="legend" aria-hidden="true">
+    <div id="scale"></div>
+    <div class="ticks" id="ticks"></div>
+  </div>
+
+  <div class="steps">
+    <button class="step" id="b1" type="button">1. Compress<small>push the piston</small></button>
+    <button class="step" id="b2" type="button">2. Shed heat<small>tank walls cool it</small></button>
+    <button class="step" id="b3" type="button">3. Open valve<small>blast into vacuum</small></button>
+  </div>
+
+  <div class="bar">
+    <p id="say" aria-live="polite"></p>
+    <div class="tools">
+      <label for="slow"><input id="slow" type="checkbox"> Slow motion</label>
+      <button id="reset" type="button">Start over</button>
+    </div>
+  </div>
+
+  <section class="read" aria-label="Live readings">
+    <div><span class="k">Gas in tank</span><output id="rTank">293 K</output></div>
+    <div><span class="k">Gas in blast</span><output id="rPlume">–</output></div>
+    <div><span class="k">Energy now in forward rush</span><output id="rFlow">0%</output><div id="flowTrack"><div id="flowFill"></div></div></div>
+  </section>
+
+  <section class="notes">
+    <div>
+      <h2>Why squeezing heats it</h2>
+      <p>A molecule that hits an advancing piston bounces off faster, like a tennis ball off a swung racket. Every bounce adds energy, and that extra speed is the heat.</p>
+    </div>
+    <div>
+      <h2>Why the blast feels cold</h2>
+      <p>Pressure turns random jostling into a shared rush in one direction. Molecules can be moving fast and still be cold if their neighbors travel alongside them. Step 2 matters too: without shedding heat first, the blast starts out much hotter. This is a 2D teaching model, so its temperatures are illustrative.</p>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const W = 1000, H = 520, N = 110, R = 2.4, ROOM = 293, V0 = 95;
+  const TANK = { top: 150, bot: 370, right: 340, left: 30 };
+  const PMIN = 235, RELEASE_SECONDS = 9, GAP = 46, GY = (TANK.top + TANK.bot) / 2, DT = 1 / 300, CELL = 10;
+  const cv = document.getElementById("stage"), c = cv.getContext("2d");
+  const $ = id => document.getElementById(id);
+  const cols = Math.ceil(W / CELL) + 2, rows = Math.ceil(H / CELL) + 2;
+  const head = new Int32Array(cols * rows), next = new Int32Array(N);
+
+  let ps, px, pv, target, phase, tankT, plumeT, coldest, flow, tick, acc, last, drag, heatPulse, releaseTime;
+
+  /* Temperature color scale: log spaced, with room temperature as the pale midpoint. */
+  const TMIN = 30, TMAX = 1500;
+  const STOPS = [[30, [42, 76, 255]], [110, [50, 190, 255]], [293, [236, 240, 246]], [600, [255, 186, 66]], [1000, [255, 96, 44]], [1500, [255, 40, 96]]];
+  const uOf = t => Math.log(Math.max(TMIN, Math.min(TMAX, t)) / TMIN) / Math.log(TMAX / TMIN);
+  function color(t) {
+    t = Math.max(TMIN, Math.min(TMAX, t));
+    for (let i = 1; i < STOPS.length; i++) if (t <= STOPS[i][0]) {
+      const [a, ca] = STOPS[i - 1], [b, cb] = STOPS[i], f = Math.log(t / a) / Math.log(b / a);
+      return `rgb(${ca.map((v, k) => Math.round(v + (cb[k] - v) * f)).join(",")})`;
+    }
+    return "rgb(255,40,96)";
+  }
+  $("scale").style.background = `linear-gradient(90deg, ${STOPS.map(([t, x]) => `rgb(${x}) ${(uOf(t) * 100).toFixed(1)}%`).join(",")})`;
+  $("ticks").innerHTML = [[30, "30 K"], [110, "110 K"], [293, "room 293 K"], [600, "600 K"], [1500, "1500 K"]]
+    .map(([t, s]) => `<span style="left:${(uOf(t) * 100).toFixed(1)}%">${s}</span>`).join("");
+
+  const gauss = () => Math.sqrt(-2 * Math.log(1 - Math.random())) * Math.cos(6.2832 * Math.random());
+
+  function reset() {
+    px = TANK.left; pv = 0; target = TANK.left; phase = "ready"; tankT = ROOM; plumeT = null; coldest = null;
+    flow = 0; tick = 0; acc = 0; drag = false; heatPulse = 0; releaseTime = 0; ps = [];
+    const s = V0 / Math.SQRT2;
+    while (ps.length < N) {
+      const x = TANK.left + 8 + Math.random() * (TANK.right - TANK.left - 16), y = TANK.top + 8 + Math.random() * (TANK.bot - TANK.top - 16);
+      if (ps.some(p => (p.x - x) ** 2 + (p.y - y) ** 2 < 64)) continue;
+      ps.push({ x, y, vx: gauss() * s, vy: gauss() * s, t: ROOM, a: Math.random() * 6.28, w: (Math.random() - .5) * 9, out: false, gone: false });
+    }
+    const m = ps.reduce((o, p) => [o[0] + p.vx, o[1] + p.vy], [0, 0]).map(v => v / N);
+    ps.forEach(p => { p.vx -= m[0]; p.vy -= m[1]; });
+    const k = V0 / Math.sqrt(ps.reduce((o, p) => o + p.vx ** 2 + p.vy ** 2, 0) / N);
+    ps.forEach(p => { p.vx *= k; p.vy *= k; });
+    ui();
+  }
+
+  const inTank = p => !p.gone && p.x < TANK.right;
+  const kT = v2 => ROOM * v2 / (V0 * V0);
+
+  function collide() {
+    head.fill(-1);
+    ps.forEach((p, i) => {
+      if (p.gone) return;
+      const k = ((p.x / CELL | 0) + 1) + ((p.y / CELL | 0) + 1) * cols;
+      if (k >= 0 && k < head.length) { next[i] = head[k]; head[k] = i; }
+    });
+    const D2 = 4 * R * R;
+    for (let y = 0; y < rows - 1; y++) for (let x = 0; x < cols - 1; x++) {
+      for (let i = head[x + y * cols]; i >= 0; i = next[i]) {
+        for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1], [-1, 1]]) {
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || nx >= cols || ny >= rows) continue;
+          for (let j = dx || dy ? head[nx + ny * cols] : next[i]; j >= 0; j = next[j]) {
+            const a = ps[i], b = ps[j], ex = b.x - a.x, ey = b.y - a.y, d2 = ex * ex + ey * ey;
+            if (d2 >= D2 || d2 === 0) continue;
+            if ((a.x < TANK.right) !== (b.x < TANK.right) && Math.abs(a.y - GY) > GAP / 2) continue;
+            const d = Math.sqrt(d2), nxx = ex / d, nyy = ey / d, rel = (a.vx - b.vx) * nxx + (a.vy - b.vy) * nyy;
+            const o = (2 * R - d) / 2;
+            a.x -= nxx * o; a.y -= nyy * o; b.x += nxx * o; b.y += nyy * o;
+            if (rel <= 0) continue;
+            a.vx -= rel * nxx; a.vy -= rel * nyy; b.vx += rel * nxx; b.vy += rel * nyy;
+          }
+        }
+      }
+    }
+  }
+
+  function wallCool(p) {
+    if (phase !== "cooling") return;
+    const v2 = p.vx * p.vx + p.vy * p.vy; if (!v2) return;
+    const f = Math.sqrt((v2 + .3 * (V0 * V0 - v2)) / v2);
+    p.vx *= f; p.vy *= f; heatPulse = 1;
+  }
+
+  function step() {
+    const old = px;
+    const dist = target - px, maxV = drag ? 260 : 55;
+    pv = Math.sign(dist) * Math.min(maxV, Math.abs(dist) / DT);
+    if (phase === "released" || phase === "done") pv = 0;
+    px += pv * DT;
+
+    const open = phase === "released" || phase === "done";
+    if (phase === "released") releaseTime += DT;
+    for (const p of ps) {
+      if (p.gone) continue;
+      const wasTank = p.x < TANK.right;
+      p.x += p.vx * DT; p.y += p.vy * DT; p.a += p.w * DT;
+      if (wasTank) {
+        if (p.x - R < px && p.vx < pv) { p.x = px + R; p.vx = 2 * pv - p.vx; }
+        if (p.y - R < TANK.top) { p.y = TANK.top + R; p.vy = Math.abs(p.vy); wallCool(p); }
+        if (p.y + R > TANK.bot) { p.y = TANK.bot - R; p.vy = -Math.abs(p.vy); wallCool(p); }
+        if (p.x + R > TANK.right && !(open && Math.abs(p.y - GY) < GAP / 2 - R)) { p.x = TANK.right - R; p.vx = -Math.abs(p.vx); wallCool(p); }
+      } else {
+        if (p.x - R < TANK.right && !(Math.abs(p.y - GY) < GAP / 2 - R)) { p.x = TANK.right + R; p.vx = Math.abs(p.vx); }
+        p.out = p.out || p.x > TANK.right + 40;
+        if (p.x > W + 12 || p.y < -12 || p.y > H + 12) p.gone = true;
+      }
+    }
+    collide();
+    if (phase === "compressing" && Math.abs(px - PMIN) < .5) setPhase("compressed");
+    if (old !== px && phase === "ready" && px > PMIN - 2) setPhase("compressed");
+  }
+
+  /* Local temperature: fit the neighborhood's smooth flow, then measure motion left over. */
+  function measure() {
+    for (const p of ps) {
+      if (p.gone) continue;
+      let k = 0, mx = 0, my = 0, mu = 0, mv = 0; const near = [];
+      for (const q of ps) {
+        if (q.gone || (q.x < TANK.right) !== (p.x < TANK.right)) continue;
+        if ((q.x - p.x) ** 2 + (q.y - p.y) ** 2 < 4900) { near.push(q); k++; mx += q.x; my += q.y; mu += q.vx; mv += q.vy; }
+      }
+      if (k < 6) continue;
+      mx /= k; my /= k; mu /= k; mv /= k;
+      let sxx = 0, sxy = 0, syy = 0, sxu = 0, syu = 0, sxv = 0, syv = 0;
+      for (const q of near) {
+        const x = q.x - mx, y = q.y - my, u = q.vx - mu, v = q.vy - mv;
+        sxx += x * x; sxy += x * y; syy += y * y; sxu += x * u; syu += y * u; sxv += x * v; syv += y * v;
+      }
+      const det = sxx * syy - sxy * sxy;
+      let a = 0, b = 0, e = 0, f = 0;
+      if (det > 1e-3 * sxx * syy && det > 1) {
+        a = (syy * sxu - sxy * syu) / det; b = (sxx * syu - sxy * sxu) / det;
+        e = (syy * sxv - sxy * syv) / det; f = (sxx * syv - sxy * sxv) / det;
+      }
+      let res = 0;
+      for (const q of near) {
+        const x = q.x - mx, y = q.y - my;
+        res += (q.vx - mu - a * x - b * y) ** 2 + (q.vy - mv - e * x - f * y) ** 2;
+      }
+      const est = kT(res / (k - 3));
+      p.t += (est - p.t) * .22;
+    }
+  }
+
+  function readings() {
+    const tank = ps.filter(inTank);
+    const open = phase === "released" || phase === "done";
+    if (tank.length) {
+      const raw = open ? tank.reduce((s, p) => s + p.t, 0) / tank.length : kT(tank.reduce((s, p) => s + p.vx ** 2 + p.vy ** 2, 0) / tank.length);
+      tankT += (raw - tankT) * .12;
+      if (!open) tank.forEach(p => { p.t += (tankT - p.t) * .1; });
+    }
+    const plume = ps.filter(p => p.out);
+    if (plume.length >= 8) {
+      plumeT = plume.reduce((s, p) => s + p.t, 0) / plume.length;
+      coldest = coldest == null ? plumeT : Math.min(coldest, plumeT);
+    }
+    if (open) {
+      let ke = 0, rnd = 0;
+      for (const p of ps) { const e = p.vx ** 2 + p.vy ** 2; ke += e; rnd += Math.min(e, p.t / ROOM * V0 * V0); }
+      flow = ke ? Math.max(0, 1 - rnd / ke) : 0;
+      if (phase === "released" && releaseTime >= RELEASE_SECONDS) setPhase("done");
+    }
+    if (phase === "cooling" && tankT <= ROOM + 6) setPhase("cooled");
+    $("rTank").textContent = tank.length ? `${Math.round(tankT)} K` : "empty";
+    $("rPlume").textContent = plumeT == null ? "–" : `${Math.round(plumeT)} K`;
+    $("rFlow").textContent = `${Math.round(flow * 100)}%`;
+    $("flowFill").style.width = `${flow * 100}%`;
+  }
+
+  const MSG = {
+    ready: "This is oxygen at room temperature. Press Compress, or grab the piston and shove it yourself.",
+    compressing: "Every molecule that hits the moving piston rebounds faster. Watch the color climb.",
+    compressed: () => `Same molecules, about a third of the space, now ${Math.round(tankT)} K. Next, let the tank walls pull that heat out.`,
+    cooling: "The walls absorb energy on each bounce. The gas is cooling but stays squeezed at high pressure.",
+    cooled: "Back near room temperature, still under pressure. That stored pressure is what makes the cold. Open the valve.",
+    released: "Molecules race out together. Their motion is becoming a shared rush, so the jostling between neighbors fades and the color turns blue.",
+    done: () => `The blast reached about ${Math.round(plumeT ?? ROOM)} K, measured by how much neighbors jostle each other. Its energy didn't vanish. It moved into the forward rush.`
+  };
+
+  function setPhase(x) { phase = x; ui(); }
+  function ui() {
+    const m = MSG[phase]; $("say").textContent = typeof m === "function" ? m() : m;
+    const can1 = phase === "ready", can2 = phase === "compressed", can3 = phase === "compressed" || phase === "cooled";
+    $("b1").disabled = !can1; $("b2").disabled = !can2; $("b3").disabled = !can3;
+    $("b1").className = "step" + (can1 ? " next" : " done");
+    $("b2").className = "step" + (can2 ? " next" : ["cooling", "cooled", "released", "done"].includes(phase) ? " done" : "");
+    $("b3").className = "step" + (phase === "cooled" ? " next" : "");
+  }
+
+  $("b1").onclick = () => { target = PMIN; setPhase("compressing"); };
+  $("b2").onclick = () => setPhase("cooling");
+  $("b3").onclick = () => setPhase("released");
+  $("reset").onclick = reset;
+
+  const toX = e => { const r = cv.getBoundingClientRect(); return (e.clientX - r.left) / r.width * W; };
+  const canDrag = () => phase === "ready" || phase === "compressing";
+  cv.addEventListener("pointerdown", e => {
+    if (!canDrag() || Math.abs(toX(e) - px) > 46) return;
+    drag = true; cv.setPointerCapture(e.pointerId); if (phase === "compressing") phase = "ready"; target = Math.max(TANK.left, Math.min(PMIN, toX(e) - 0));
+  });
+  cv.addEventListener("pointermove", e => {
+    if (drag) target = Math.max(TANK.left, Math.min(PMIN, toX(e)));
+    else cv.style.cursor = canDrag() && Math.abs(toX(e) - px) <= 46 ? "ew-resize" : "default";
+  });
+  const stop = () => { drag = false; target = px; };
+  cv.addEventListener("pointerup", stop); cv.addEventListener("pointercancel", stop);
+
+  function draw() {
+    const r = cv.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2), bw = Math.round(r.width * dpr), bh = Math.round(r.height * dpr);
+    if (bw && (cv.width !== bw || cv.height !== bh)) { cv.width = bw; cv.height = bh; }
+    const s = cv.width / W, fs = Math.max(13, 12 / (r.width / W || 1) * .95);
+    c.setTransform(s, 0, 0, s, 0, 0);
+    c.fillStyle = "#080c19"; c.fillRect(0, 0, W, H);
+
+    const open = phase === "released" || phase === "done";
+    c.fillStyle = "#0f1730"; c.fillRect(px, TANK.top, TANK.right - px, TANK.bot - TANK.top);
+    const wall = phase === "cooling" ? "#6fb7d8" : "#59658c";
+    c.strokeStyle = wall; c.lineWidth = 5; c.beginPath();
+    c.moveTo(0, TANK.top); c.lineTo(TANK.right, TANK.top); c.lineTo(TANK.right, open ? GY - GAP / 2 : TANK.bot);
+    if (open) { c.moveTo(TANK.right, GY + GAP / 2); c.lineTo(TANK.right, TANK.bot); }
+    c.moveTo(TANK.right, TANK.bot); c.lineTo(0, TANK.bot); c.stroke();
+    if (!open) { c.strokeStyle = "#ffd166"; c.lineWidth = 7; c.beginPath(); c.moveTo(TANK.right, GY - GAP / 2); c.lineTo(TANK.right, GY + GAP / 2); c.stroke(); }
+
+    c.fillStyle = "#3a4670"; c.fillRect(0, GY - 9, px - 10, 18);
+    c.fillStyle = canDrag() ? "#aab6dc" : "#7885ad"; c.fillRect(px - 12, TANK.top + 3, 12, TANK.bot - TANK.top - 6);
+
+    if (phase === "cooling") {
+      c.strokeStyle = `rgba(255,150,80,${.25 + heatPulse * .35})`; c.lineWidth = 2;
+      for (let x = px + 14; x < TANK.right; x += 26) for (const [y0, d] of [[TANK.top - 8, -1], [TANK.bot + 8, 1]]) {
+        const o = (performance.now() / 45 + x) % 18;
+        c.beginPath(); c.moveTo(x, y0 + d * o); c.lineTo(x, y0 + d * (o + 9)); c.stroke();
+      }
+      heatPulse *= .9;
+    }
+
+    c.font = `500 ${fs}px "IBM Plex Mono", monospace`; c.fillStyle = "#a3adc8"; c.textAlign = "left";
+    c.fillText("TANK", TANK.left + 2, TANK.top - 20);
+    c.fillText("VACUUM", TANK.right + 34, 40);
+    if (!open) { c.fillStyle = "#ffd166"; c.fillText("VALVE", TANK.right + 12, GY + 5); }
+
+    for (const p of ps) {
+      if (p.gone) continue;
+      const col = color(p.t);
+      if (p.x > TANK.right) {
+        c.strokeStyle = col; c.globalAlpha = .28; c.lineWidth = 2.5; c.beginPath(); c.moveTo(p.x, p.y); c.lineTo(p.x - p.vx * .05, p.y - p.vy * .05); c.stroke(); c.globalAlpha = 1;
+      }
+      const dx = Math.cos(p.a) * 2.9, dy = Math.sin(p.a) * 2.9;
+      c.fillStyle = col;
+      c.beginPath(); c.arc(p.x - dx, p.y - dy, 3.3, 0, 6.2832); c.arc(p.x + dx, p.y + dy, 3.3, 0, 6.2832); c.fill();
+    }
+  }
+
+  function frame(now) {
+    const dt = Math.min(.04, (now - (last ?? now)) / 1000); last = now;
+    acc += dt * ($("slow").checked ? .25 : 1);
+    while (acc >= DT) { step(); acc -= DT; }
+    if (++tick % 3 === 0) measure();
+    readings();
+    if (phase === "compressed") $("say").textContent = MSG.compressed();
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) $("slow").checked = true;
+  reset();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
