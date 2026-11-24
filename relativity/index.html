@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Twin Clocks</title>
+<meta name="description" content="Race a light clock near light speed, then send one twin to a real star and see who comes home younger.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: an observatory readout. Light clocks above, the star voyage below, controls mounted beneath. */
+:root {
+  color-scheme: dark;
+  --space: #11131f;
+  --plate: #1c2032;
+  --line: #373d58;
+  --ink: #f1f2f8;
+  --muted: #b0b4c9;
+  --light: #ffe27a;
+  --earth: #4fd1b5;
+  --ship: #ff8a66;
+  --display: "Space Grotesk", system-ui, sans-serif;
+  --body: "Inter", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--space); color: var(--ink); font-family: var(--body); line-height: 1.55; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 28px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+h1 { font: 700 clamp(1.8rem, 4.5vw, 3rem)/1.05 var(--display); margin: 0; text-wrap: balance; letter-spacing: -.02em; }
+.lede { margin: 8px 0 0; color: var(--muted); max-width: 65ch; }
+.demos { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.brand { font: 700 1rem var(--display); margin-right: 8px; }
+.demos a { font: 500 .875rem var(--body); color: var(--muted); text-decoration: none; border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; }
+.demos a:hover { color: var(--ink); border-color: var(--muted); }
+.demos a[aria-current=page] { color: var(--ink); background: var(--plate); border-color: var(--muted); }
+.demos a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--light); outline-offset: 2px; }
+#stage { display: block; width: 100%; aspect-ratio: 1000 / 560; max-width: 100%; background: #0b0d17; border: 1px solid var(--line); border-radius: 6px; }
+.actions { display: grid; grid-template-columns: 3fr 1fr; gap: 8px; }
+.act { font: 600 1rem var(--body); color: var(--ink); background: var(--plate); border: 1px solid var(--line); border-radius: 6px; padding: 13px 12px; cursor: pointer; min-width: 0; }
+#launch { background: #6b5a1f; border-color: var(--light); }
+#reset { font-weight: 500; font-size: .875rem; background: transparent; }
+.controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.ctl { display: grid; gap: 4px; min-width: 0; }
+.ctl label, .ctl .k { display: flex; justify-content: space-between; gap: 8px; font-size: .84rem; color: var(--muted); }
+.ctl b { font: 500 .9rem var(--mono); color: var(--ink); white-space: nowrap; }
+input[type=range] { width: 100%; accent-color: var(--light); margin: 4px 0; }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.seg button { font: 500 .875rem var(--body); color: var(--ink); background: var(--plate); border: 1px solid var(--line); border-radius: 4px; padding: 5px; cursor: pointer; min-width: 0; }
+.seg button[aria-pressed=true] { background: var(--light); border-color: var(--light); color: #211b05; }
+#say { margin: 0; min-height: 3.2em; max-width: 78ch; font-size: 1.02rem; }
+.read { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
+.read div { min-width: 0; }
+.read .k { display: block; font-size: .78rem; color: var(--muted); }
+.read output { font: 500 clamp(1.1rem, 2.6vw, 1.6rem) var(--mono); font-variant-numeric: tabular-nums; }
+#rE { color: var(--earth); } #rS { color: var(--ship); }
+.notes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; color: var(--muted); font-size: .92rem; border-top: 1px solid var(--line); padding-top: 16px; }
+.notes h2 { font: 700 1.05rem var(--display); color: var(--ink); margin: 0 0 4px; }
+.notes p { margin: 0; }
+@media (max-width: 720px) {
+  .controls, .notes { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .read { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <nav class="demos" aria-label="Physics demos">
+    <span class="brand">Physics Playground</span>
+    <a href="../">The Cold Blast</a>
+    <a href="../hydraulics/">The Oil Lever</a>
+    <a href="../siphon/">Siphon Demo</a>
+    <a href="./" aria-current="page">The Twin Clocks</a>
+  </nav>
+  <header>
+    <h1>Moving clocks run slow.</h1>
+    <p class="lede">Each clock ticks when a pulse of light bounces between two mirrors. Light moves at the same speed for everyone, so the moving clock's longer zigzag takes more time to finish each tick.</p>
+  </header>
+
+  <canvas id="stage" width="1000" height="560" aria-label="Two light clocks, one on Earth and one on a moving ship, above a voyage track and bars comparing how much each twin has aged"></canvas>
+
+  <div class="actions">
+    <button class="act" id="launch" type="button">Launch the ship</button>
+    <button class="act" id="reset" type="button">Start over</button>
+  </div>
+
+  <p id="say" aria-live="polite"></p>
+
+  <div class="controls">
+    <div class="ctl">
+      <label for="speed">Ship speed <b id="speedV"></b></label>
+      <input id="speed" type="range" min="0.1" max="3.8" step="0.01" value="1.32">
+    </div>
+    <div class="ctl">
+      <span class="k">Destination <b id="destV"></b></span>
+      <div class="seg" role="group" aria-label="Destination star">
+        <button type="button" data-d="4.25" data-n="Proxima Centauri" aria-pressed="true">Proxima</button>
+        <button type="button" data-d="8.6" data-n="Sirius" aria-pressed="false">Sirius</button>
+        <button type="button" data-d="25" data-n="Vega" aria-pressed="false">Vega</button>
+      </div>
+    </div>
+  </div>
+
+  <section class="read" aria-label="Live readings">
+    <div><span class="k">Time stretch</span><output id="rG">1.00×</output></div>
+    <div><span class="k">Earth twin's age</span><output id="rE">30.0</output></div>
+    <div><span class="k">Ship twin's age</span><output id="rS">30.0</output></div>
+    <div><span class="k">Age gap</span><output id="rA">0.0 yr</output></div>
+  </section>
+
+  <section class="notes">
+    <div>
+      <h2>Why time stretches</h2>
+      <p>From Earth, the ship's light travels a longer diagonal path at the same speed. Each tick must take longer. The stretch factor is 1 / √(1 − v²/c²).</p>
+    </div>
+    <div>
+      <h2>Why the twins differ</h2>
+      <p>While coasting, each twin sees the other's clock running slow. The ship twin is the one who turns around and changes direction, which breaks the tie. This demo treats launch and turnaround as instant.</p>
+    </div>
+    <div>
+      <h2>It affects your phone</h2>
+      <p>GPS satellites lose about 7 microseconds a day from their speed and gain about 45 from weaker gravity. GPS corrects for both, or location errors would quickly build up.</p>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const W = 1000, H = 560, C = 150, L = 150, P = 2 * L / C, TOP = 72, TRACK = 700, SHIP_X0 = 265, TRIP_SECONDS = 12, START_AGE = 30;
+  const cv = document.getElementById("stage"), c = cv.getContext("2d");
+  const $ = id => document.getElementById(id);
+  const calm = matchMedia("(prefers-reduced-motion: reduce)").matches ? .35 : 1;
+
+  let clock = 0, trip = 0, state = "ready", dist = 4.25, star = "Proxima Centauri", last, lastKey = "";
+
+  const beta = () => Math.tanh(+$("speed").value);
+  const gamma = () => 1 / Math.sqrt(1 - beta() ** 2);
+  const total = () => 2 * dist / beta();
+  const pct = b => `${(b * 100).toFixed(b >= .99 ? 2 : 1)}%`;
+  const years = y => y >= 100 ? y.toFixed(0) : y.toFixed(1);
+
+  const tri = u => { const f = ((u % 1) + 1) % 1; return f < .5 ? 2 * f : 2 - 2 * f; };
+
+  function resetTrip() { trip = 0; state = "ready"; lastKey = ""; }
+
+  function update(dt) {
+    clock += dt * calm;
+    if (state === "flying") {
+      trip = Math.min(total(), trip + total() / TRIP_SECONDS * dt);
+      if (trip >= total()) state = "done";
+    }
+  }
+
+  function ui() {
+    const b = beta(), g = gamma(), T = total(), shipT = trip / g;
+    const key = [state, $("speed").value, dist].join();
+    if (key !== lastKey) {
+      lastKey = key;
+      let t;
+      if (state === "ready") t = `At ${pct(b)} of light speed, one second on the ship takes ${g.toFixed(2)} seconds as measured from Earth. Launch to ${star} and back.`;
+      else if (state === "flying") t = `The ship is covering ${(dist * 2).toFixed(1)} light-years. Watch the ship twin's age bar fall behind.`;
+      else if (state === "paused") t = "Paused mid-voyage. Both twins are frozen at the ages shown.";
+      else t = `Back home. ${years(T)} years passed on Earth, but only ${years(T / g)} passed on the ship. The ship twin is ${years(T - T / g)} years younger.`;
+      $("say").textContent = t;
+    }
+    $("launch").textContent = state === "ready" ? "Launch the ship" : state === "flying" ? "Pause" : state === "paused" ? "Resume" : "Fly again";
+    $("speedV").textContent = `${pct(b)} c`;
+    $("destV").textContent = `${star}, ${dist} ly`;
+    $("rG").textContent = `${g >= 10 ? g.toFixed(1) : g.toFixed(2)}×`;
+    $("rE").textContent = years(START_AGE + trip);
+    $("rS").textContent = years(START_AGE + shipT);
+    $("rA").textContent = `${years(trip - shipT)} yr`;
+  }
+
+  function mirrors(x, col) {
+    c.fillStyle = col;
+    c.fillRect(x - 30, TOP - 6, 60, 5);
+    c.fillRect(x - 30, TOP + L + 1, 60, 5);
+    c.strokeStyle = col; c.globalAlpha = .28; c.lineWidth = 1.5;
+    c.strokeRect(x - 34, TOP - 12, 68, L + 24);
+    c.globalAlpha = 1;
+  }
+
+  function photon(x, y) {
+    c.fillStyle = "rgba(255,226,122,.2)"; c.beginPath(); c.arc(x, y, 13, 0, 6.2832); c.fill();
+    c.fillStyle = "#fff4c2"; c.beginPath(); c.arc(x, y, 5, 0, 6.2832); c.fill();
+  }
+
+  function drawClocks(compact, fs) {
+    const b = beta(), g = gamma(), t = clock;
+    const yAt = u => TOP + L - L * tri(u);
+
+    mirrors(125, "#4fd1b5");
+    c.strokeStyle = "rgba(255,226,122,.42)"; c.lineWidth = 2; c.beginPath(); c.moveTo(125, TOP); c.lineTo(125, TOP + L); c.stroke();
+    photon(125, yAt(t / P));
+
+    const span = TRACK / (b * C), wraps = Math.floor(t / span), start = wraps * span, xOf = u => SHIP_X0 + (u - start) * b * C;
+    const shipP = g * P, x = xOf(t);
+    c.strokeStyle = "rgba(255,226,122,.62)"; c.lineWidth = 2; c.beginPath(); c.moveTo(xOf(start), yAt(start / shipP));
+    let k = Math.floor(start / (shipP / 2)) + 1, guard = 0;
+    while (k * shipP / 2 < t && guard++ < 400) { const u = k * shipP / 2; c.lineTo(xOf(u), yAt(u / shipP)); k++; }
+    c.lineTo(x, yAt(t / shipP)); c.stroke();
+    mirrors(x, "#ff8a66");
+    photon(x, yAt(t / shipP));
+
+    c.textBaseline = "alphabetic"; c.textAlign = "center";
+    c.fillStyle = "#4fd1b5"; c.fillText("Earth", 125, TOP - 22);
+    c.fillStyle = "#ff8a66"; c.fillText("Ship", Math.max(70, Math.min(W - 50, x)), TOP - 22);
+    if (!compact) {
+      c.fillStyle = "#b0b4c9"; c.fillText(`${Math.floor(t / P)} ticks`, 125, TOP + L + 34);
+      c.fillText(`${Math.floor(t / shipP)} ticks`, Math.max(70, Math.min(W - 50, x)), TOP + L + 34);
+    }
+  }
+
+  function drawTrip(compact, fs) {
+    const T = total(), g = gamma(), p = trip / T, out = p < .5, frac = out ? p * 2 : 2 - p * 2;
+    const x0 = 120, x1 = 880, y = 318, x = x0 + (x1 - x0) * frac;
+    c.strokeStyle = "#373d58"; c.lineWidth = 2; c.setLineDash([5, 7]); c.beginPath(); c.moveTo(x0, y); c.lineTo(x1, y); c.stroke(); c.setLineDash([]);
+    c.fillStyle = "#4fd1b5"; c.beginPath(); c.arc(x0, y, 15, 0, 6.2832); c.fill();
+    c.fillStyle = "#ffe27a"; c.beginPath(); c.arc(x1, y, 11, 0, 6.2832); c.fill();
+    c.fillStyle = "rgba(255,226,122,.18)"; c.beginPath(); c.arc(x1, y, 22, 0, 6.2832); c.fill();
+    const d = state === "ready" || out ? 1 : -1;
+    c.fillStyle = "#ff8a66"; c.beginPath(); c.moveTo(x + d * 16, y); c.lineTo(x - d * 11, y - 9); c.lineTo(x - d * 6, y); c.lineTo(x - d * 11, y + 9); c.fill();
+    c.fillStyle = "#b0b4c9"; c.textAlign = "right"; c.fillText(compact ? star.split(" ")[0] : `${star} · ${dist} light-years`, W - 20, y - 30);
+
+    const bx = 130, bw = 830, bars = [["Earth", trip, "#4fd1b5", 392], ["Ship", trip / g, "#ff8a66", 470]];
+    for (const [name, value, col, by] of bars) {
+      c.fillStyle = "#1c2032"; c.fillRect(bx, by, bw, 42);
+      c.fillStyle = col; c.fillRect(bx, by, bw * value / T, 42);
+      c.fillStyle = col; c.textAlign = "right"; c.textBaseline = "middle"; c.fillText(name, bx - 12, by + 21);
+      const label = `+${years(value)} yr`, w = bw * value / T;
+      const inside = w > c.measureText(label).width + 20;
+      c.fillStyle = inside ? "#0b0d17" : "#f1f2f8"; c.textAlign = "left";
+      c.fillText(label, inside ? bx + 10 : bx + w + 8, by + 21);
+      c.textBaseline = "alphabetic";
+    }
+  }
+
+  function draw() {
+    const r = cv.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2), bw = Math.round(r.width * dpr), bh = Math.round(r.height * dpr);
+    if (bw && (cv.width !== bw || cv.height !== bh)) { cv.width = bw; cv.height = bh; }
+    const s = cv.width / W, fs = Math.max(13, 11.5 / (r.width / W || 1)), compact = r.width < 560;
+    c.setTransform(s, 0, 0, s, 0, 0);
+    c.fillStyle = "#0b0d17"; c.fillRect(0, 0, W, H);
+    c.font = `500 ${fs}px "IBM Plex Mono", monospace`;
+    drawClocks(compact, fs);
+    drawTrip(compact, fs);
+  }
+
+  function frame(now) {
+    const dt = Math.min(.05, (now - (last ?? now)) / 1000); last = now;
+    update(dt); ui(); draw();
+    requestAnimationFrame(frame);
+  }
+
+  $("launch").addEventListener("click", () => {
+    if (state === "ready") state = "flying";
+    else if (state === "flying") state = "paused";
+    else if (state === "paused") state = "flying";
+    else { trip = 0; state = "flying"; }
+  });
+  $("reset").addEventListener("click", () => { clock = 0; resetTrip(); });
+  $("speed").addEventListener("input", () => { clock = 0; resetTrip(); });
+  document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => {
+    dist = +b.dataset.d; star = b.dataset.n;
+    document.querySelectorAll(".seg button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    resetTrip();
+  }));
+
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
