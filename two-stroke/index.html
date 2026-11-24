@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Two-Stroke</title>
+<meta name="description" content="Watch a cutaway two-stroke engine draw in, squeeze, burn, and blow out its fuel mixture on every turn of the crank.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: a shop-manual cutaway. The engine fills the frame, the cycle strip and gauges sit beneath it. */
+:root {
+  color-scheme: dark;
+  --shop: #15140f;
+  --plate: #222019;
+  --line: #45412f;
+  --ink: #f4f0e4;
+  --muted: #bdb6a0;
+  --fresh: #58d3a0;
+  --burn: #ffb347;
+  --display: "Space Grotesk", system-ui, sans-serif;
+  --body: "Inter", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--shop); color: var(--ink); font-family: var(--body); line-height: 1.55; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 28px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+h1 { font: 700 clamp(1.8rem, 4.5vw, 3rem)/1.05 var(--display); margin: 0; text-wrap: balance; letter-spacing: -.02em; }
+.lede { margin: 8px 0 0; color: var(--muted); max-width: 65ch; }
+.demos { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.brand { font: 700 1rem var(--display); margin-right: 8px; }
+.demos a { font: 500 .875rem var(--body); color: var(--muted); text-decoration: none; border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; }
+.demos a:hover { color: var(--ink); border-color: var(--muted); }
+.demos a[aria-current=page] { color: var(--ink); background: var(--plate); border-color: var(--muted); }
+.demos a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--burn); outline-offset: 2px; }
+#stage { display: block; width: 100%; aspect-ratio: 1000 / 560; max-width: 100%; background: #0e0d09; border: 1px solid var(--line); border-radius: 6px; }
+.cycle { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; }
+.side { display: grid; gap: 6px; min-width: 0; }
+.side > span { font-size: .78rem; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 500 .84rem var(--body); color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; }
+.chip.on { color: #1b1607; background: var(--burn); border-color: var(--burn); }
+.chip.on.fresh { background: var(--fresh); border-color: var(--fresh); color: #062016; }
+.actions { display: grid; grid-template-columns: 2fr 1fr auto; gap: 8px; }
+.act { font: 600 1rem var(--body); color: var(--ink); background: var(--plate); border: 1px solid var(--line); border-radius: 6px; padding: 13px 12px; cursor: pointer; min-width: 0; }
+#run { background: #5c4314; border-color: var(--burn); }
+#spark[aria-pressed=true] { background: #3d2a2a; border-color: #e07a6a; }
+#reset { font-weight: 500; font-size: .875rem; background: transparent; }
+.controls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; max-width: 520px; }
+.controls label { display: flex; justify-content: space-between; gap: 8px; font-size: .84rem; color: var(--muted); }
+.controls b { font: 500 .9rem var(--mono); color: var(--ink); white-space: nowrap; }
+input[type=range] { width: 100%; accent-color: var(--burn); margin: 4px 0; }
+#say { margin: 0; min-height: 3.2em; max-width: 78ch; font-size: 1.02rem; }
+.read { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
+.read div { min-width: 0; }
+.read .k { display: block; font-size: .78rem; color: var(--muted); }
+.read output { font: 500 clamp(1.1rem, 2.6vw, 1.6rem) var(--mono); font-variant-numeric: tabular-nums; }
+.notes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; color: var(--muted); font-size: .92rem; border-top: 1px solid var(--line); padding-top: 16px; }
+.notes h2 { font: 700 1.05rem var(--display); color: var(--ink); margin: 0 0 4px; }
+.notes p { margin: 0; }
+@media (max-width: 720px) {
+  .cycle, .notes { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .read { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .actions { grid-template-columns: 1fr 1fr; }
+  #reset { grid-column: 1 / -1; }
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <nav class="demos" aria-label="Physics demos">
+    <span class="brand">Physics Playground</span>
+    <a href="../">The Cold Blast</a>
+    <a href="../hydraulics/">The Oil Lever</a>
+    <a href="../siphon/">Siphon Demo</a>
+    <a href="../relativity/">The Twin Clocks</a>
+    <a href="../rocket/">The Rocket Push</a>
+    <a href="./" aria-current="page">The Two-Stroke</a>
+  </nav>
+  <header>
+    <h1>One turn, one bang.</h1>
+    <p class="lede">A two-stroke engine fires on every turn of the crank. It manages this by using both sides of the piston at once. The top squeezes and burns fuel while the bottom pumps in the next batch.</p>
+  </header>
+
+  <canvas id="stage" width="1000" height="560" aria-label="Cutaway of a two-stroke engine with a piston, crank, exhaust port, transfer port, reed valve, and spark plug"></canvas>
+
+  <div class="cycle" aria-label="What is happening now">
+    <div class="side"><span>Above the piston</span>
+      <div class="chips"><span class="chip" id="cComp">Compression</span><span class="chip" id="cPow">Spark and power</span><span class="chip" id="cExh">Exhaust</span><span class="chip fresh" id="cTr">Transfer</span></div>
+    </div>
+    <div class="side"><span>Below the piston, in the crankcase</span>
+      <div class="chips"><span class="chip fresh" id="cIn">Intake through reed valve</span><span class="chip" id="cPre">Squeezing the next charge</span></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="act" id="run" type="button">Pause</button>
+    <button class="act" id="spark" type="button" aria-pressed="false">Cut the spark</button>
+    <button class="act" id="reset" type="button">Start over</button>
+  </div>
+
+  <p id="say" aria-live="polite"></p>
+
+  <div class="controls">
+    <label for="speed">Engine speed, slowed way down <b id="speedV"></b></label>
+    <input id="speed" type="range" min="6" max="90" step="2" value="24">
+  </div>
+
+  <section class="read" aria-label="Live readings">
+    <div><span class="k">Crank angle after top</span><output id="rA">180°</output></div>
+    <div><span class="k">Cylinder pressure</span><output id="rP">1.0 bar</output></div>
+    <div><span class="k">Crankcase pressure</span><output id="rC">1.0 bar</output></div>
+    <div><span class="k">Fresh fuel lost out exhaust</span><output id="rL">–</output></div>
+  </section>
+
+  <section class="notes">
+    <div>
+      <h2>Why it's simple</h2>
+      <p>The piston itself opens and closes the ports as it slides past them. There are no cams or valves in the head, which keeps chainsaws, dirt bikes, and outboard motors light and cheap.</p>
+    </div>
+    <div>
+      <h2>Why it's powerful</h2>
+      <p>A four-stroke engine fires every other turn. A two-stroke fires every turn, so a small one can make a lot of power for its weight.</p>
+    </div>
+    <div>
+      <h2>Why it's dirty</h2>
+      <p>The exhaust and transfer ports are open together, so some fresh fuel blows straight out the exhaust. Oil is mixed into the fuel to lubricate the crank, and it burns too. That's the blue smoke.</p>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const W = 1000, H = 560, TAU = Math.PI * 2;
+  const BORE_L = 352, BORE_R = 508, HEAD = 97, CRANK = { x: 430, y: 415 }, CR = 75, ROD = 170, PIN = 50, SKIRT = 80, LINER_END = 332;
+  const EXH = { top: 195, bot: 240 }, TR = { top: 215, bot: 250 }, PLUG = { x: 430, y: HEAD };
+  const CASE = { l: 300, r: 560, t: 332, b: 505 }, PIPE = { l: 510, r: 960, t: 190, b: 245 }, INTAKE = { l: 40, r: 300, t: 445, b: 475 };
+  const D0 = 1 / 380, GAMMA = 1.35, Q = 3.5, SPARK = -12 * Math.PI / 180;
+  const KE = 1.6, KT = 3, KI = 4, SPEED = 70;
+  const cv = document.getElementById("stage"), c = cv.getContext("2d");
+  const $ = id => document.getElementById(id);
+
+  let history, theta, T, parts, moving, running, sparkOn, burning, flameR, accE, accT, accI, last, lastKey, delivered, lost, cycleDelivered, cycleLost, flash, flowIn, peakP, shownPeak;
+
+  const pistonTop = th => CRANK.y - (CR * Math.cos(th) + Math.sqrt(ROD * ROD - (CR * Math.sin(th)) ** 2)) - PIN;
+  const vCyl = top => (BORE_R - BORE_L) * (top - HEAD);
+  const vCase = top => (CASE.r - CASE.l) * (CASE.b - CASE.t) + (BORE_R - BORE_L) * Math.max(0, LINER_END - (top + SKIRT));
+  const openFrac = (top, port) => Math.max(0, Math.min(1, (top - port.top) / (port.bot - port.top)));
+  const inRegion = (p, r) => p.region === r && !p.route;
+  const count = r => parts.reduce((n, p) => n + (inRegion(p, r) ? 1 : 0), 0);
+
+  function jitter(p, s) { const a = Math.random() * TAU; p.vx = Math.cos(a) * s; p.vy = Math.sin(a) * s; }
+
+  function reset() {
+    history = []; theta = Math.PI; T = 1; parts = []; burning = false; flameR = 0; accE = accT = accI = 0; lastKey = ""; delivered = lost = 0; cycleDelivered = cycleLost = 0; flash = 0; flowIn = 0; peakP = 1; shownPeak = 0;
+    const top = pistonTop(theta);
+    const add = (n, region, box, fresh) => { for (let i = 0; i < n; i++) { const p = { x: box.l + 4 + Math.random() * (box.r - box.l - 8), y: box.t + 4 + Math.random() * (box.b - box.t - 8), region, fresh, route: null }; jitter(p, SPEED); parts.push(p); } };
+    add(Math.round(vCyl(top) * D0), "cyl", { l: BORE_L, r: BORE_R, t: HEAD, b: top }, true);
+    add(Math.round(vCase(top) * D0), "case", CASE, true);
+    add(26, "intake", INTAKE, true);
+  }
+
+  function pressureCyl(top) { return count("cyl") / vCyl(top) / D0 * T; }
+  function pressureCase(top) { return count("case") / vCase(top) / D0; }
+
+  function nearest(region, x, y) {
+    let best = null, d = Infinity;
+    for (const p of parts) if (inRegion(p, region)) { const e = (p.x - x) ** 2 + (p.y - y) ** 2; if (e < d) { d = e; best = p; } }
+    return best;
+  }
+
+  function inCase(x, y, top) {
+    return (x > CASE.l + 3 && x < CASE.r - 3 && y > CASE.t && y < CASE.b - 3) || (x > BORE_L + 3 && x < BORE_R - 3 && y > top + SKIRT + 3 && y <= CASE.t + 1);
+  }
+
+  function step(dth) {
+    const old = pistonTop(theta), before = theta;
+    theta += dth;
+    const top = pistonTop(theta);
+    T *= Math.pow(vCyl(old) / vCyl(top), GAMMA - 1);
+
+    const a0 = ((before % TAU) + TAU) % TAU, a1 = ((theta % TAU) + TAU) % TAU, sparkAt = SPARK + TAU;
+    if (a0 < sparkAt && a1 >= sparkAt || (a1 < a0 && a0 < sparkAt)) {
+      if (cycleDelivered) { history.push([cycleDelivered, cycleLost]); if (history.length > 4) history.shift(); }
+      cycleDelivered = 0; cycleLost = 0;
+      if (sparkOn) { burning = true; flameR = 0; flash = 1; }
+    }
+    if (burning) {
+      flameR += 700 * dth;
+      const n = count("cyl");
+      let any = false;
+      for (const p of parts) if (inRegion(p, "cyl") && p.fresh) {
+        if (Math.hypot(p.x - PLUG.x, p.y - PLUG.y) < flameR) { p.fresh = false; p.lit = 1; T += Q / Math.max(1, n); } else any = true;
+      }
+      if (!any) burning = false;
+    }
+
+    const pc = pressureCyl(top), pk = pressureCase(top);
+    peakP = Math.max(peakP, pc);
+    const ex = openFrac(top, EXH), tr = openFrac(top, TR);
+    if (ex > 0 && pc > 1) {
+      accE += KE * ex * (pc - 1) * dth * 40;
+      while (accE >= 1) {
+        accE--;
+        const p = nearest("cyl", BORE_R, (EXH.top + EXH.bot) / 2); if (!p) break;
+        const n0 = count("cyl");
+        p.region = "exh"; p.x = BORE_R + 4; p.y = Math.max(EXH.top + 4, Math.min(EXH.bot - 4, p.y)); p.vx = SPEED * (1.5 + Math.random()); p.vy = (Math.random() - .5) * SPEED;
+        if (p.fresh && p.moved) { lost++; cycleLost++; }
+        T *= Math.pow((n0 - 1) / Math.max(1, n0), GAMMA - 1);
+      }
+    }
+    if (tr > 0 && pk > pc) {
+      accT += KT * tr * (pk - pc) * dth * 40;
+      while (accT >= 1) {
+        accT--;
+        const p = nearest("case", 322, CASE.t + 8); if (!p) break;
+        p.route = [[322, CASE.t + 4], [322, (TR.top + TR.bot) / 2], [BORE_L + 6, (TR.top + TR.bot) / 2]]; p.region = "cyl"; p.fresh = true; p.lit = 0; p.moved = true;
+        delivered++; cycleDelivered++;
+      }
+    }
+    if (pk < 1) {
+      accI += KI * (1 - pk) * dth * 40;
+      flowIn = Math.min(1, flowIn + .2);
+      while (accI >= 1) {
+        accI--;
+        const p = nearest("intake", INTAKE.r, (INTAKE.t + INTAKE.b) / 2); if (!p) break;
+        p.route = [[CASE.l + 8, (INTAKE.t + INTAKE.b) / 2]]; p.region = "case";
+        const q = { x: INTAKE.l + 4, y: INTAKE.t + 4 + Math.random() * 22, region: "intake", fresh: true, route: null }; jitter(q, SPEED); parts.push(q);
+      }
+    }
+    flowIn *= .94;
+
+    const sp = SPEED * dth, hot = Math.sqrt(Math.max(.5, T));
+    for (const p of parts) {
+      p.lit = Math.max(0, (p.lit || 0) - dth * 2);
+      if (p.route) {
+        const [x, y] = p.route[0], dx = x - p.x, dy = y - p.y, d = Math.hypot(dx, dy), go = 4 * sp * 4;
+        if (d <= go) {
+          p.x = x; p.y = y; p.route.shift();
+          if (!p.route.length) {
+            p.route = null;
+            if (p.region === "cyl") { const n = count("cyl"); T = (T * (n - 1) + 1) / Math.max(1, n); p.vx = SPEED * .5; p.vy = -SPEED * 1.6; }
+            else jitter(p, SPEED);
+          }
+        } else { p.x += dx / d * go; p.y += dy / d * go; }
+        continue;
+      }
+      const k = p.region === "cyl" ? hot : 1;
+      const nx = p.x + p.vx * dth * k, ny = p.y + p.vy * dth * k;
+      if (p.region === "cyl") {
+        p.x = nx; p.y = ny;
+        if (p.x < BORE_L + 3) { p.x = BORE_L + 3; p.vx = Math.abs(p.vx); }
+        if (p.x > BORE_R - 3) { p.x = BORE_R - 3; p.vx = -Math.abs(p.vx); }
+        if (p.y < HEAD + 3) { p.y = HEAD + 3; p.vy = Math.abs(p.vy); }
+        if (p.y > top - 3) { p.y = top - 3; p.vy = -Math.abs(p.vy); }
+      } else if (p.region === "case") {
+        if (inCase(nx, ny, top)) { p.x = nx; p.y = ny; }
+        else {
+          if (inCase(nx, p.y, top)) p.x = nx; else p.vx = -p.vx;
+          if (inCase(p.x, ny, top)) p.y = ny; else p.vy = -p.vy;
+          if (!inCase(p.x, p.y, top)) { p.y = Math.max(p.y, top + SKIRT + 4); if (!inCase(p.x, p.y, top)) { p.x = 430; p.y = CASE.t + 20; } }
+        }
+      } else if (p.region === "intake") {
+        p.x = Math.max(INTAKE.l, Math.min(INTAKE.r - 3, nx)); p.y = ny;
+        if (p.y < INTAKE.t + 3 || p.y > INTAKE.b - 3) { p.vy = -p.vy; p.y = Math.max(INTAKE.t + 3, Math.min(INTAKE.b - 3, p.y)); }
+        if (p.x <= INTAKE.l || p.x >= INTAKE.r - 3) p.vx = -p.vx;
+      } else if (p.region === "exh") {
+        p.x = nx; p.y = ny;
+        if (p.y < PIPE.t + 3 || p.y > PIPE.b - 3) { p.vy = -p.vy; p.y = Math.max(PIPE.t + 3, Math.min(PIPE.b - 3, p.y)); }
+        p.vx = Math.max(p.vx, SPEED * .8);
+      }
+    }
+    parts = parts.filter(p => !(p.region === "exh" && p.x > PIPE.r));
+    flash = Math.max(0, flash - dth * 3);
+  }
+
+  function phase() {
+    const top = pistonTop(theta), a = ((theta % TAU) + TAU) % TAU, rising = Math.sin(a) < 0;
+    const ex = openFrac(top, EXH) > 0, tr = openFrac(top, TR) > 0;
+    return { ex, tr, comp: rising && !ex, pow: !rising && !ex, intake: flowIn > .15, pre: !rising && !tr };
+  }
+
+  function ui() {
+    const top = pistonTop(theta), deg = Math.round(((theta % TAU) + TAU) % TAU * 180 / Math.PI) % 360, ph = phase();
+    $("cComp").classList.toggle("on", ph.comp); $("cPow").classList.toggle("on", ph.pow && sparkOn); $("cExh").classList.toggle("on", ph.ex);
+    $("cTr").classList.toggle("on", ph.tr); $("cIn").classList.toggle("on", ph.intake); $("cPre").classList.toggle("on", ph.pre);
+    $("rA").textContent = `${deg}°`;
+    $("rP").textContent = `${pressureCyl(top).toFixed(1)} bar`;
+    $("rC").textContent = `${pressureCase(top).toFixed(2)} bar`;
+    { const d = history.reduce((s, h) => s + h[0], 0), l = history.reduce((s, h) => s + h[1], 0); $("rL").textContent = d > 10 ? `${Math.round(l / d * 100)}%` : "–"; }
+    $("speedV").textContent = `${$("speed").value} rpm`;
+    $("run").textContent = running ? "Pause" : "Run";
+    const key = [ph.comp, ph.pow, ph.ex, ph.tr, sparkOn].join();
+    if (key === lastKey) return;
+    lastKey = key;
+    let t;
+    if (ph.tr) t = "The transfer port opens. Fresh mixture squeezed in the crankcase rushes up and pushes the last exhaust out. Some fresh fuel slips out with it.";
+    else if (ph.ex) t = "The piston uncovers the exhaust port. Hot, high-pressure gas blasts out into the pipe.";
+    else if (ph.comp) t = "The piston rises. Above it, the fresh charge is squeezed. Below it, falling crankcase pressure opens the reed valve and pulls in new mixture.";
+    else if (ph.pow && sparkOn) t = "Spark! The burning mixture's pressure shoves the piston down, turning the crank. Below, the piston squeezes the crankcase mixture for the next cycle.";
+    else t = "No spark, so nothing burns. The charge just springs back like an air spring and gives no power.";
+    $("say").textContent = t;
+  }
+
+  function color(p) {
+    if (p.lit > .05) return `rgb(255,${Math.round(230 - 40 * (1 - p.lit))},${Math.round(150 * p.lit)})`;
+    if (p.fresh) return "#58d3a0";
+    if (p.region === "cyl") { const f = Math.max(0, Math.min(1, (T - 1) / 4)); return `rgb(${Math.round(150 + 105 * f)},${Math.round(130 + 30 * f)},${Math.round(115 - 60 * f)})`; }
+    return "#9a8f80";
+  }
+
+  function draw() {
+    const r = cv.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2), bw = Math.round(r.width * dpr), bh = Math.round(r.height * dpr);
+    if (bw && (cv.width !== bw || cv.height !== bh)) { cv.width = bw; cv.height = bh; }
+    const s = cv.width / W, fs = Math.max(13, 11.5 / (r.width / W || 1)), compact = r.width < 560;
+    c.setTransform(s, 0, 0, s, 0, 0);
+    c.fillStyle = "#0e0d09"; c.fillRect(0, 0, W, H);
+    c.font = `500 ${fs}px "IBM Plex Mono", monospace`;
+    const top = pistonTop(theta);
+
+    c.fillStyle = "#1c1a14";
+    c.fillRect(BORE_L, HEAD, BORE_R - BORE_L, LINER_END - HEAD);
+    c.fillRect(CASE.l, CASE.t, CASE.r - CASE.l, CASE.b - CASE.t);
+    c.fillRect(PIPE.l, PIPE.t, PIPE.r - PIPE.l, PIPE.b - PIPE.t);
+    c.fillRect(INTAKE.l, INTAKE.t, INTAKE.r - INTAKE.l, INTAKE.b - INTAKE.t);
+    c.fillRect(310, TR.top, 42, CASE.t - TR.top + 4);
+
+    if (burning || flash > 0) {
+      c.fillStyle = `rgba(255,190,90,${.18 + flash * .3})`;
+      c.beginPath(); c.arc(PLUG.x, PLUG.y, Math.min(flameR, 200), 0, Math.PI); c.fill();
+    }
+
+    /* Crank and rod */
+    const px = CRANK.x + CR * Math.sin(theta), py = CRANK.y - CR * Math.cos(theta), pinY = top + PIN;
+    c.fillStyle = "#3a372c"; c.beginPath(); c.arc(CRANK.x, CRANK.y, 82, 0, TAU); c.fill();
+    c.fillStyle = "#4c4839"; c.beginPath(); c.arc(CRANK.x, CRANK.y, 82, theta + Math.PI / 2 + .35, theta + Math.PI * 1.5 - .35); c.lineTo(CRANK.x, CRANK.y); c.fill();
+
+    for (const p of parts) {
+      if (p.region === "cyl" && !p.route && p.y > top) continue;
+      c.fillStyle = color(p); c.beginPath(); c.arc(p.x, p.y, 3.2, 0, TAU); c.fill();
+    }
+
+    c.strokeStyle = "#a59f8a"; c.lineWidth = 16; c.lineCap = "round"; c.beginPath(); c.moveTo(px, py); c.lineTo(CRANK.x, pinY); c.stroke();
+    c.fillStyle = "#cfc8b0"; c.beginPath(); c.arc(px, py, 10, 0, TAU); c.fill();
+    c.fillStyle = "#6c6754"; c.beginPath(); c.arc(CRANK.x, CRANK.y, 8, 0, TAU); c.fill();
+
+    /* Piston */
+    c.fillStyle = "#b9b29a"; c.fillRect(BORE_L + 1, top, BORE_R - BORE_L - 2, SKIRT);
+    c.fillStyle = "#8f896f"; c.fillRect(BORE_L + 1, top + 8, BORE_R - BORE_L - 2, 4); c.fillRect(BORE_L + 1, top + 16, BORE_R - BORE_L - 2, 4);
+    c.fillStyle = "#6c6754"; c.beginPath(); c.arc(CRANK.x, pinY, 9, 0, TAU); c.fill();
+
+    /* Walls with port openings */
+    c.strokeStyle = "#8a846c"; c.lineWidth = 6; c.lineCap = "butt"; c.beginPath();
+    c.moveTo(BORE_L - 3, TR.top); c.lineTo(BORE_L - 3, HEAD - 3); c.lineTo(BORE_R + 3, HEAD - 3); c.lineTo(BORE_R + 3, EXH.top);
+    c.moveTo(BORE_R + 3, EXH.bot); c.lineTo(BORE_R + 3, CASE.t);
+    c.moveTo(BORE_L - 3, TR.bot); c.lineTo(BORE_L - 3, CASE.t);
+    c.moveTo(307, TR.top); c.lineTo(307, CASE.t); c.moveTo(307, TR.top); c.lineTo(BORE_L - 3, TR.top);
+    c.moveTo(CASE.l - 3, CASE.t); c.lineTo(307, CASE.t); c.moveTo(BORE_R + 3, CASE.t); c.lineTo(CASE.r + 3, CASE.t); c.lineTo(CASE.r + 3, CASE.b + 3); c.lineTo(CASE.l - 3, CASE.b + 3); c.lineTo(CASE.l - 3, INTAKE.b);
+    c.moveTo(CASE.l - 3, INTAKE.t); c.lineTo(CASE.l - 3, CASE.t);
+    c.moveTo(BORE_R + 3, PIPE.t); c.lineTo(PIPE.r, PIPE.t); c.moveTo(BORE_R + 3, PIPE.b); c.lineTo(PIPE.r, PIPE.b);
+    c.moveTo(INTAKE.l, INTAKE.t); c.lineTo(CASE.l - 3, INTAKE.t); c.moveTo(INTAKE.l, INTAKE.b); c.lineTo(CASE.l - 3, INTAKE.b);
+    c.stroke();
+
+    /* Reed valve */
+    const reedOpen = flowIn > .15;
+    c.strokeStyle = reedOpen ? "#58d3a0" : "#cfc8b0"; c.lineWidth = 4; c.beginPath();
+    c.moveTo(CASE.l - 3, INTAKE.t); c.lineTo(CASE.l - 3 + (reedOpen ? 22 : 2), INTAKE.b - (reedOpen ? 8 : 0)); c.stroke();
+
+    /* Spark plug */
+    c.fillStyle = "#cfc8b0"; c.fillRect(PLUG.x - 9, HEAD - 46, 18, 34); c.fillStyle = "#e9e4d4"; c.fillRect(PLUG.x - 5, HEAD - 70, 10, 26);
+    c.fillStyle = "#8a846c"; c.fillRect(PLUG.x - 2, HEAD - 12, 4, 10);
+    if (flash > 0) { c.fillStyle = `rgba(190,220,255,${flash})`; c.beginPath(); c.arc(PLUG.x, HEAD + 2, 6 + flash * 10, 0, TAU); c.fill(); }
+
+    c.fillStyle = "#bdb6a0"; c.textAlign = "left";
+    c.fillText(compact ? "exhaust" : "exhaust port → pipe", 600, PIPE.t - 12);
+    if (!compact) {
+      c.fillText("spark plug", PLUG.x + 18, HEAD - 50);
+      c.textAlign = "right"; c.fillText("transfer port", 300, TR.top + 18);
+      c.textAlign = "left"; c.fillText("crankcase", CASE.r + 14, CASE.b - 8);
+      c.fillText("reed valve", 70, INTAKE.t - 12);
+      c.fillText("fuel-air mixture in", 70, INTAKE.b + 26);
+    }
+    c.textAlign = "left";
+    const legend = [["#58d3a0", "fresh mixture"], ["#ffd37a", "burning"], ["#9a8f80", "exhaust"]];
+    legend.forEach(([col, label], i) => {
+      const x = compact ? 620 : 640, y = 330 + i * (fs + 12);
+      c.fillStyle = col; c.beginPath(); c.arc(x, y - fs * .3, 6, 0, TAU); c.fill();
+      c.fillStyle = "#bdb6a0"; c.fillText(label, x + 14, y);
+    });
+  }
+
+  function frame(now) {
+    const dt = Math.min(.05, (now - (last ?? now)) / 1000); last = now;
+    if (running) {
+      let d = +$("speed").value / 60 * TAU * dt;
+      while (d > 0) { const h = Math.min(.015, d); step(h); d -= h; }
+    }
+    ui(); draw();
+    requestAnimationFrame(frame);
+  }
+
+  $("run").addEventListener("click", () => { running = !running; });
+  $("spark").addEventListener("click", () => { sparkOn = !sparkOn; $("spark").setAttribute("aria-pressed", String(!sparkOn)); $("spark").textContent = sparkOn ? "Cut the spark" : "Restore the spark"; lastKey = ""; });
+  $("reset").addEventListener("click", reset);
+
+  running = !matchMedia("(prefers-reduced-motion: reduce)").matches; sparkOn = true;
+  reset();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
