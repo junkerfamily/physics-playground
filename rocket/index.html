@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Rocket Push</title>
+<meta name="description" content="Fire a cutaway rocket engine and see how hot gas pushing on the chamber walls drives a rocket through empty space.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: a test stand above a flight window, with the firing controls and telemetry beneath. */
+:root {
+  color-scheme: dark;
+  --pad: #12141a;
+  --plate: #1e2129;
+  --line: #3a3e4a;
+  --ink: #f3f1ee;
+  --muted: #b5b1aa;
+  --flame: #ff8a3d;
+  --push: #7fd4ff;
+  --display: "Space Grotesk", system-ui, sans-serif;
+  --body: "Inter", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--pad); color: var(--ink); font-family: var(--body); line-height: 1.55; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 28px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+h1 { font: 700 clamp(1.8rem, 4.5vw, 3rem)/1.05 var(--display); margin: 0; text-wrap: balance; letter-spacing: -.02em; }
+.lede { margin: 8px 0 0; color: var(--muted); max-width: 65ch; }
+.demos { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.brand { font: 700 1rem var(--display); margin-right: 8px; }
+.demos a { font: 500 .875rem var(--body); color: var(--muted); text-decoration: none; border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; }
+.demos a:hover { color: var(--ink); border-color: var(--muted); }
+.demos a[aria-current=page] { color: var(--ink); background: var(--plate); border-color: var(--muted); }
+.demos a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--flame); outline-offset: 2px; }
+#stage { display: block; width: 100%; aspect-ratio: 1000 / 560; max-width: 100%; background: #0a0b0f; border: 1px solid var(--line); border-radius: 6px; }
+.actions { display: grid; grid-template-columns: 2fr 1fr auto; gap: 8px; }
+.act { font: 600 1rem var(--body); color: var(--ink); background: var(--plate); border: 1px solid var(--line); border-radius: 6px; padding: 13px 12px; cursor: pointer; min-width: 0; }
+#fire { background: #6e3413; border-color: var(--flame); }
+#fire[aria-pressed=true] { background: var(--flame); color: #2a1204; }
+#plug[aria-pressed=true] { background: #234a5c; border-color: var(--push); }
+#reset { font-weight: 500; font-size: .875rem; background: transparent; }
+.controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.ctl { display: grid; gap: 4px; min-width: 0; }
+.ctl label { display: flex; justify-content: space-between; gap: 8px; font-size: .84rem; color: var(--muted); }
+.ctl b { font: 500 .9rem var(--mono); color: var(--ink); white-space: nowrap; }
+input[type=range] { width: 100%; accent-color: var(--flame); margin: 4px 0; }
+#say { margin: 0; min-height: 3.2em; max-width: 78ch; font-size: 1.02rem; }
+.read { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
+.read div { min-width: 0; }
+.read .k { display: block; font-size: .78rem; color: var(--muted); }
+.read output { font: 500 clamp(1.1rem, 2.6vw, 1.6rem) var(--mono); font-variant-numeric: tabular-nums; }
+.notes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; color: var(--muted); font-size: .92rem; border-top: 1px solid var(--line); padding-top: 16px; }
+.notes h2 { font: 700 1.05rem var(--display); color: var(--ink); margin: 0 0 4px; }
+.notes p { margin: 0; }
+@media (max-width: 720px) {
+  .controls, .notes { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .read { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .actions { grid-template-columns: 1fr 1fr; }
+  #reset { grid-column: 1 / -1; }
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <nav class="demos" aria-label="Physics demos">
+    <span class="brand">Physics Playground</span>
+    <a href="../">The Cold Blast</a>
+    <a href="../hydraulics/">The Oil Lever</a>
+    <a href="../siphon/">Siphon Demo</a>
+    <a href="../relativity/">The Twin Clocks</a>
+    <a href="./" aria-current="page">The Rocket Push</a>
+  </nav>
+  <header>
+    <h1>A rocket pushes on itself.</h1>
+    <p class="lede">Burning fuel makes hot gas that slams into every wall of the engine. The front wall gets hit, but the back is open, so nothing balances that push. The gas escapes backward and the rocket goes forward, even in empty space.</p>
+  </header>
+
+  <canvas id="stage" width="1000" height="560" aria-label="Cutaway rocket engine with gas molecules hitting its walls, above a rocket flying through space"></canvas>
+
+  <div class="actions">
+    <button class="act" id="fire" type="button" aria-pressed="false">Fire engine</button>
+    <button class="act" id="plug" type="button" aria-pressed="false">Plug nozzle</button>
+    <button class="act" id="reset" type="button">Start over</button>
+  </div>
+
+  <p id="say" aria-live="polite"></p>
+
+  <div class="controls">
+    <div class="ctl">
+      <label for="throttle">Throttle <b id="throttleV"></b></label>
+      <input id="throttle" type="range" min="20" max="100" step="5" value="100">
+    </div>
+    <div class="ctl">
+      <label for="fuel">Fuel share of launch mass <b id="fuelV"></b></label>
+      <input id="fuel" type="range" min="50" max="95" step="5" value="90">
+    </div>
+  </div>
+
+  <section class="read" aria-label="Live readings">
+    <div><span class="k">Thrust</span><output id="rT">0 kN</output></div>
+    <div><span class="k">Rocket speed</span><output id="rV">0 m/s</output></div>
+    <div><span class="k">Fuel left</span><output id="rF">100%</output></div>
+    <div><span class="k">Exhaust speed</span><output id="rU">–</output></div>
+  </section>
+
+  <section class="notes">
+    <div>
+      <h2>No air needed</h2>
+      <p>A rocket doesn't push against the air or the ground. The gas pushes on the inside of the engine. That's why rockets work best in space, where nothing gets in the way.</p>
+    </div>
+    <div>
+      <h2>Momentum evens out</h2>
+      <p>Every bit of gas thrown backward gives the rocket an equal kick forward. Faster exhaust gives a bigger kick from the same amount of fuel.</p>
+    </div>
+    <div>
+      <h2>Why rockets are mostly fuel</h2>
+      <p>Reaching orbit takes about 9.4 km/s, including losses to gravity and air. Even a rocket that's 90% fuel falls short with 3 km/s exhaust, which is why big rockets drop empty stages along the way.</p>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const W = 1000, H = 560, DT = 1 / 240, S = 600, R = 2.5, CAP = 700, RATE = 60, TS = 6, U = 5.0, LAUNCH = 100000, BURN_SECONDS = 20;
+  const cv = document.getElementById("stage"), c = cv.getContext("2d");
+  const $ = id => document.getElementById(id);
+  const A = [470, 80], B = [720, 80], Cc = [720, 240], D = [470, 240], Tt = [370, 115], Tb = [370, 205], Et = [220, 72], Eb = [220, 248], EXIT = 220;
+
+  function seg(a, b, inside) {
+    const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy);
+    let nx = -dy / len, ny = dx / len;
+    if ((inside[0] - a[0]) * nx + (inside[1] - a[1]) * ny < 0) { nx = -nx; ny = -ny; }
+    return { a, b, dx, dy, len, nx, ny };
+  }
+  const WALLS = [seg(A, B, [560, 160]), seg(B, Cc, [560, 160]), seg(Cc, D, [560, 160]), seg(A, Tt, [450, 160]), seg(D, Tb, [450, 160]), seg(Tt, Et, [300, 160]), seg(Tb, Eb, [300, 160])];
+  WALLS.slice(0, 3).forEach(w => { w.diffuse = true; });
+  const PLUG = seg(Et, Eb, [300, 160]);
+
+  let ps, firing, plugged, fuel0, fuel, dry, speed, acc, fwd, back, thrust, exitSum, exitCount, hits, stars, scroll, plume, last, lastKey, burnedOut;
+  const MP = (LAUNCH * .9) / (RATE * BURN_SECONDS);
+
+  function reset() {
+    ps = []; firing = false; plugged = false; acc = 0; fwd = back = thrust = 0; exitSum = 0; exitCount = 0; hits = []; plume = []; scroll = 0; speed = 0; burnedOut = false; lastKey = "";
+    fuel0 = LAUNCH * +$("fuel").value / 100; fuel = fuel0; dry = LAUNCH - fuel0;
+    stars = Array.from({ length: 70 }, () => [Math.random() * W, 352 + Math.random() * 190, Math.random() * .8 + .2]);
+    $("fire").setAttribute("aria-pressed", "false"); $("plug").setAttribute("aria-pressed", "false");
+  }
+
+  const chamberCount = () => { let n = 0; for (const p of ps) if (!p.out) n++; return n; };
+  const mass = () => dry + fuel + chamberCount() * MP;
+
+  function spawn() {
+    const s = Math.max(.55, Math.min(2.2, Math.sqrt(-Math.log(1 - Math.random())))) * S, a = Math.random() * 6.2832;
+    ps.push({ x: 620 + Math.random() * 94, y: 90 + Math.random() * 140, vx: Math.cos(a) * s, vy: Math.sin(a) * s, out: false });
+    fuel -= MP;
+  }
+
+  function step() {
+    if (firing && fuel >= MP && chamberCount() < CAP) {
+      acc += RATE * +$("throttle").value / 100 * DT;
+      while (acc >= 1 && fuel >= MP) { spawn(); acc--; }
+    }
+    if (firing && fuel < MP) { firing = false; burnedOut = true; $("fire").setAttribute("aria-pressed", "false"); }
+
+    const walls = plugged ? WALLS.concat(PLUG) : WALLS;
+    for (const p of ps) {
+      p.x += p.vx * DT; p.y += p.vy * DT;
+      if (p.out) continue;
+      for (const w of walls) {
+        const rx = p.x - w.a[0], ry = p.y - w.a[1], d = rx * w.nx + ry * w.ny, vn = p.vx * w.nx + p.vy * w.ny;
+        if (d >= R || vn >= 0) continue;
+        const t = (rx * w.dx + ry * w.dy) / (w.len * w.len);
+        if (t < -.04 || t > 1.04) continue;
+        p.vx -= 2 * vn * w.nx; p.vy -= 2 * vn * w.ny; p.x += (R - d) * w.nx; p.y += (R - d) * w.ny;
+        if (w.diffuse) {
+          const sp = Math.hypot(p.vx, p.vy), st = 2 * Math.random() - 1, ct = Math.sqrt(1 - st * st);
+          p.vx = sp * (ct * w.nx - st * w.ny); p.vy = sp * (ct * w.ny + st * w.nx);
+        }
+        const ix = 2 * vn * w.nx;
+        if (ix > 0) fwd += ix; else back -= ix;
+        if (hits.length > 90) hits.shift();
+        hits.push({ x: p.x - w.nx * R, y: p.y - w.ny * R, nx: w.nx, ny: w.ny, life: 1 });
+      }
+      if (p.x < EXIT && !plugged) {
+        p.out = true;
+        const u = -p.vx * U;
+        exitSum += u; exitCount++;
+        speed += MP * u / mass();
+        if (plume.length < 200) plume.push({ x: 548, y: 440 + (Math.random() - .5) * 26, v: 60 + Math.max(0, u) * .03, life: 1 });
+      }
+    }
+    ps = ps.filter(p => p.x > -12 && p.x < 726 && p.y > -12 && p.y < 332 && (p.out || p.x < EXIT + 1 || (p.y > 62 && p.y < 258)));
+  }
+
+  function update(dt) {
+    const n = Math.round(dt / DT), out0 = exitSum;
+    for (let i = 0; i < n; i++) step();
+    const net = (exitSum - out0) * MP / TS / 1000 / Math.max(dt, 1e-3);
+    thrust += (net - thrust) * (1 - Math.exp(-dt * 1.2));
+    fwd = back = 0;
+    scroll += speed * .05 * dt;
+    hits.forEach(h => h.life -= dt * 2.5); hits = hits.filter(h => h.life > 0);
+    plume.forEach(p => { p.x -= p.v * dt; p.life -= dt * .9; }); plume = plume.filter(p => p.life > 0);
+  }
+
+  function say() {
+    const exhaust = exitCount ? exitSum / exitCount : 3000;
+    const predicted = exhaust * Math.log(LAUNCH / dry);
+    const gas = chamberCount();
+    const key = [firing, plugged, burnedOut, gas > 0, Math.round(speed / 500)].join();
+    if (key === lastKey) return;
+    lastKey = key;
+    let t;
+    if (plugged && (firing || gas > 0)) t = "The nozzle is plugged. Gas hits the plug as hard as it hits the front wall, so the pushes cancel and the rocket doesn't move. Pressure just builds.";
+    else if (firing) t = "Gas pounds the front of the chamber with nothing to balance it at the open back. That unbalanced push is the thrust.";
+    else if (burnedOut && gas > 5) t = "Out of fuel. The last hot gas is still escaping, so the rocket is still speeding up a little.";
+    else if (burnedOut) t = `Out of fuel. The rocket coasts at ${Math.round(speed).toLocaleString("en-US")} m/s. The rocket equation predicts ${Math.round(predicted).toLocaleString("en-US")} m/s for this exhaust speed and fuel load.`;
+    else if (speed > 0) t = `Engine off. With no air to slow it, the rocket keeps coasting at ${Math.round(speed).toLocaleString("en-US")} m/s.`;
+    else t = "Fire the engine and watch which walls the gas hits. Then try plugging the nozzle.";
+    $("say").textContent = t;
+  }
+
+  function readings() {
+    $("rT").textContent = `${Math.max(0, Math.round(thrust)).toLocaleString("en-US")} kN`;
+    $("rV").textContent = `${Math.round(speed).toLocaleString("en-US")} m/s`;
+    $("rF").textContent = `${Math.max(0, Math.round(fuel / fuel0 * 100))}%`;
+    $("rU").textContent = exitCount ? `${Math.round(exitSum / exitCount).toLocaleString("en-US")} m/s` : "–";
+    $("fire").textContent = firing ? "Shut off engine" : fuel < MP ? "Out of fuel" : "Fire engine";
+    $("throttleV").textContent = `${$("throttle").value}%`;
+    $("fuelV").textContent = `${$("fuel").value}%`;
+  }
+
+  function gasColor(v) {
+    const f = Math.min(1, v / (S * 1.6));
+    return `rgb(255,${Math.round(110 + 130 * f)},${Math.round(40 + 160 * f * f)})`;
+  }
+
+  function arrow(x, y, dx, col, w, label, fs) {
+    if (Math.abs(dx) < 4) return;
+    const dir = Math.sign(dx), ex = x + dx, h = 12 + w;
+    c.strokeStyle = c.fillStyle = col; c.lineWidth = w;
+    c.beginPath(); c.moveTo(x, y); c.lineTo(ex - dir * h * .8, y); c.stroke();
+    c.beginPath(); c.moveTo(ex, y); c.lineTo(ex - dir * h, y - h * .6); c.lineTo(ex - dir * h, y + h * .6); c.fill();
+    if (label) { c.textAlign = "center"; c.fillText(label, x + dx / 2, y - 12 - w); }
+  }
+
+  function draw() {
+    const r = cv.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2), bw = Math.round(r.width * dpr), bh = Math.round(r.height * dpr);
+    if (bw && (cv.width !== bw || cv.height !== bh)) { cv.width = bw; cv.height = bh; }
+    const s = cv.width / W, fs = Math.max(13, 11.5 / (r.width / W || 1)), compact = r.width < 560;
+    c.setTransform(s, 0, 0, s, 0, 0);
+    c.fillStyle = "#0a0b0f"; c.fillRect(0, 0, W, H);
+    c.font = `500 ${fs}px "IBM Plex Mono", monospace`;
+
+    /* Engine cutaway */
+    c.fillStyle = "#181b22"; c.beginPath();
+    [A, B, Cc, D, Tb, Eb, Et, Tt].forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.closePath(); c.fill();
+    for (const h of hits) {
+      c.strokeStyle = `rgba(127,212,255,${h.life * .9})`; c.lineWidth = 2;
+      c.beginPath(); c.moveTo(h.x, h.y); c.lineTo(h.x - h.nx * 9 * h.life, h.y - h.ny * 9 * h.life); c.stroke();
+    }
+    for (const p of ps) {
+      c.fillStyle = gasColor(Math.hypot(p.vx, p.vy));
+      c.globalAlpha = p.out ? Math.max(.15, Math.min(1, (p.x + 12) / 230)) : 1;
+      c.beginPath(); c.arc(p.x, p.y, 3, 0, 6.2832); c.fill();
+    }
+    c.globalAlpha = 1;
+    c.strokeStyle = "#9aa1ad"; c.lineWidth = 6; c.lineJoin = "round"; c.beginPath();
+    c.moveTo(Et[0], Et[1]); c.lineTo(Tt[0], Tt[1]); c.lineTo(A[0], A[1]); c.lineTo(B[0], B[1]); c.lineTo(Cc[0], Cc[1]); c.lineTo(D[0], D[1]); c.lineTo(Tb[0], Tb[1]); c.lineTo(Eb[0], Eb[1]); c.stroke();
+    if (plugged) { c.strokeStyle = "#7fd4ff"; c.lineWidth = 8; c.beginPath(); c.moveTo(Et[0] - 2, Et[1]); c.lineTo(Eb[0] - 2, Eb[1]); c.stroke(); }
+    c.fillStyle = "#4a4f5c"; c.beginPath(); c.moveTo(B[0] + 4, B[1]); c.lineTo(860, 160); c.lineTo(Cc[0] + 4, Cc[1]); c.closePath(); c.fill();
+
+    const scale = 0.05, tx = Math.max(0, thrust) * scale;
+    arrow(850, 290, Math.min(130, tx), "#7fd4ff", 6, compact ? "" : "net push", fs);
+
+    c.fillStyle = "#b5b1aa"; c.textAlign = "center";
+    if (!compact) {
+      c.fillText("combustion chamber", 575, 52);
+      c.fillText("throat", 370, 96);
+      c.fillText("nozzle", 280, 62);
+    }
+    c.textAlign = "left"; c.fillText("FORWARD →", compact ? 760 : 880, 34);
+
+    /* Flight window */
+    c.fillStyle = "#06070a"; c.fillRect(0, 340, W, 220);
+    c.strokeStyle = "#3a3e4a"; c.lineWidth = 1; c.beginPath(); c.moveTo(0, 340.5); c.lineTo(W, 340.5); c.stroke();
+    for (const [x, y, z] of stars) {
+      const sx = (((x - scroll * z) % W) + W) % W;
+      c.fillStyle = `rgba(243,241,238,${.25 + z * .6})`; c.fillRect(sx, y, 1.6 + z, 1.6 + z);
+    }
+    for (const p of plume) { c.fillStyle = `rgba(255,150,60,${p.life * .8})`; c.beginPath(); c.arc(p.x, p.y, 2.6 + (1 - p.life) * 3, 0, 6.2832); c.fill(); }
+    const ry = 440, rl = 560, rr = 770;
+    c.fillStyle = "#d9d5ce"; c.fillRect(rl, ry - 28, rr - rl, 56);
+    c.beginPath(); c.moveTo(rr, ry - 28); c.lineTo(rr + 46, ry); c.lineTo(rr, ry + 28); c.fill();
+    c.fillStyle = "#9aa1ad"; c.beginPath(); c.moveTo(rl, ry - 14); c.lineTo(rl - 14, ry - 22); c.lineTo(rl - 14, ry + 22); c.lineTo(rl, ry + 14); c.fill();
+    const tankL = rl + 14, tankW = rr - rl - 60;
+    c.fillStyle = "#2b2f38"; c.fillRect(tankL, ry - 16, tankW, 32);
+    c.fillStyle = "#ff8a3d"; c.fillRect(tankL, ry - 16, tankW * Math.max(0, fuel / fuel0), 32);
+    c.fillStyle = "#12141a"; c.textAlign = "center"; c.textBaseline = "middle";
+    if (!compact) c.fillText("fuel", tankL + tankW / 2, ry);
+    c.textBaseline = "alphabetic";
+    c.fillStyle = "#b5b1aa"; c.textAlign = "left";
+    c.fillText(compact ? "space" : "empty space · no air to push on", 20, 368);
+    c.textAlign = "right"; c.fillStyle = "#f3f1ee";
+    c.fillText(`${Math.round(speed).toLocaleString("en-US")} m/s`, W - 20, 368);
+  }
+
+  function frame(now) {
+    const dt = Math.min(.05, (now - (last ?? now)) / 1000); last = now;
+    update(dt); say(); readings(); draw();
+    requestAnimationFrame(frame);
+  }
+
+  $("fire").addEventListener("click", () => {
+    if (fuel < MP) return;
+    firing = !firing; $("fire").setAttribute("aria-pressed", String(firing));
+  });
+  $("plug").addEventListener("click", () => {
+    plugged = !plugged; $("plug").setAttribute("aria-pressed", String(plugged));
+  });
+  $("reset").addEventListener("click", reset);
+  $("fuel").addEventListener("input", reset);
+
+  reset();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
